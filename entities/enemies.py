@@ -1,26 +1,7 @@
 import pygame as pg
 import numpy as np
 import random
-
-class Projectile:
-    def __init__(self, pos, direction, speed=0.08, max_distance=15):
-        self.pos = np.array(pos, dtype=np.float32)
-        self.direction = np.array(direction, dtype=np.float32)
-        self.speed = speed
-        self.start_pos = np.array(pos, dtype=np.float32)
-        self.max_distance = max_distance
-        self.active = True
-
-    def update(self):
-        self.pos += self.direction * self.speed
-        if np.linalg.norm(self.pos - self.start_pos) > self.max_distance:
-            self.active = False
-
-    def draw(self, screen, mode7):
-        screen_x, screen_y, scale = mode7.project(self.pos)
-        if scale > 0:
-            radius = max(2, scale // 20)
-            pg.draw.circle(screen, (255, 0, 0), (int(screen_x), int(screen_y)), radius)
+from core.projectile import Projectile
 
 class Enemy:
     def __init__(self, pos, speed=0.03, min_distance=2.0, damage=1):
@@ -28,7 +9,7 @@ class Enemy:
         self.speed = speed
         self.alive = True
         self.min_distance = min_distance
-        self.texture = pg.image.load('textures/zeppelin_obican.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_obican.png').convert_alpha()
         self.bullets = []
         self.hit_timer = 0
         self.hp = 100
@@ -106,7 +87,7 @@ class Enemy:
 class TankEnemy(Enemy):
     def __init__(self, pos):
         super().__init__(pos, speed=0.02, min_distance=1.5, damage=2)
-        self.texture = pg.image.load('textures/zeppelin_tank.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank.png').convert_alpha()
         self.hp = 400
         self.max_hp = 400
         self.shoot_delay = 300
@@ -123,7 +104,7 @@ class TankEnemy(Enemy):
 class FastEnemy(Enemy):
     def __init__(self, pos):
         super().__init__(pos, speed=0.04, min_distance=0.5, damage=4)
-        self.texture = pg.image.load('textures/zeppelin_tnt.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_tnt.png').convert_alpha()
         self.hp = 1  # Dies on contact
         self.max_hp = 1
         self.shoot_delay = None  # Not used

@@ -5,8 +5,8 @@ class Player:
     def __init__(self):
         self.health = 30
         self.max_health = 30
-        self.hit_sound = pg.mixer.Sound('music/HP loss.mp3')
-        self.health_bar_sprite = pg.image.load('textures/Steampunk_healthbar_anim.png').convert_alpha()
+        self.hit_sound = pg.mixer.Sound('assets/music/HP loss.mp3')
+        self.health_bar_sprite = pg.image.load('assets/textures/ui/Steampunk_healthbar_anim.png').convert_alpha()
         self.frame_width = 64
         self.frame_height = 64
         self.scaled_width = int(self.frame_width * 3)
