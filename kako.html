@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Workflow / TLZ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #1a1a1a;
+  --paper: #f4f1eb;
+  --mid: #888;
+  --accent: #c0392b;
+  --mono: 'Courier New', Courier, monospace;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 0;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 32px 120px;
+}
+
+/* top bar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 10px;
+  margin-bottom: 48px;
+  font-size: 11px;
+  color: var(--mid);
+  letter-spacing: 0.05em;
+}
+
+.topbar .repo {
+  font-weight: bold;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+/* heading */
+h1 {
+  font-size: 52px;
+  font-weight: bold;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+h1 .accent { color: var(--accent); }
+
+.byline {
+  font-size: 12px;
+  color: var(--mid);
+  margin-bottom: 56px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 24px;
+}
+
+/* sections */
+.block {
+  margin-bottom: 52px;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '§';
+  color: var(--accent);
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+p, li {
+  color: #333;
+  margin-bottom: 8px;
+  max-width: 640px;
+}
+
+ul, ol {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+li { margin-bottom: 4px; }
+
+strong { color: var(--ink); }
+
+/* code */
+code {
+  font-family: var(--mono);
+  background: #e8e4dc;
+  border: 1px solid #ccc;
+  padding: 1px 5px;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+pre {
+  background: var(--ink);
+  color: #e8e4dc;
+  padding: 20px 24px;
+  margin: 16px 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.9;
+  overflow-x: auto;
+  border-left: 3px solid var(--accent);
+}
+
+pre .c  { color: #666; }
+pre .g  { color: #5daa85; }
+pre .y  { color: #c8a040; }
+pre .r  { color: #c05050; }
+pre .w  { color: #e8e4dc; }
+
+/* branch diagram */
+.tree {
+  background: var(--ink);
+  color: #e8e4dc;
+  padding: 24px 28px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 2.1;
+  margin: 16px 0;
+  border-left: 3px solid var(--accent);
+}
+
+.tree .red   { color: #e05c5c; }
+.tree .green { color: #5daa85; }
+.tree .blue  { color: #7f77dd; }
+.tree .orange{ color: #e0996b; }
+.tree .dim   { color: #555; }
+
+/* rule boxes */
+.rule {
+  border: 2px solid var(--ink);
+  padding: 16px 20px;
+  margin: 20px 0;
+  position: relative;
+}
+
+.rule::before {
+  content: attr(data-label);
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: var(--paper);
+  padding: 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.rule p { margin-bottom: 0; }
+
+/* good/bad */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 16px 0;
+  border: 1px solid #ccc;
+}
+
+@media(max-width:560px){ .compare { grid-template-columns:1fr; } }
+
+.bad, .good {
+  padding: 16px 18px;
+}
+
+.bad { border-right: 1px solid #ccc; }
+
+.verdict {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.bad .verdict { color: #999; }
+.good .verdict { color: var(--accent); }
+
+.bad p, .good p {
+  font-size: 13px;
+  margin: 0;
+  color: var(--ink);
+}
+
+/* steps */
+.steps { margin: 16px 0; }
+
+.step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #ddd;
+  align-items: start;
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-n {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent);
+  padding-top: 2px;
+}
+
+.step h4 {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.step p {
+  font-size: 12px;
+  color: var(--mid);
+  margin: 0;
+}
+
+/* flow */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.fn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+}
+
+.fn.main { color: var(--accent); border-color: var(--accent); }
+.fn.dev  { color: #5daa85; border-color: #5daa85; }
+.fn.feat { color: #7f77dd; border-color: #7f77dd; }
+
+.fa {
+  font-size: 16px;
+  padding: 0 8px;
+  color: var(--mid);
+}
+
+/* label chips — boje usklađene s gantogramom */
+.chip {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border: 1px solid;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+/* Planiranje/Dizajn */ .chip-plan { color: #3a9e7e; border-color: #5DCAA5; }
+/* Programiranje    */ .chip-prog { color: #5c56b0; border-color: #7F77DD; }
+/* Grafika/Art      */ .chip-art  { color: #b86040; border-color: #F0997B; }
+/* Zvuk             */ .chip-snd  { color: #2a6aad; border-color: #378ADD; }
+/* Testiranje       */ .chip-test { color: #b07010; border-color: #EF9F27; }
+/* Dokumentacija    */ .chip-doc  { color: #666460; border-color: #888780; }
+/* Bug (extra)      */ .chip-bug  { color: var(--accent); border-color: var(--accent); }
+
+/* issue example */
+.issue {
+  border: 1px solid #bbb;
+  padding: 14px 18px;
+  margin: 8px 0;
+  background: #fff;
+}
+
+.issue-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.issue-num {
+  color: var(--mid);
+  font-size: 12px;
+}
+
+.issue-body {
+  font-size: 12px;
+  color: #555;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.issue-meta {
+  font-size: 11px;
+  color: var(--mid);
+}
+
+/* roles */
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+
+.role-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  padding: 6px 12px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.role-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.role-table tr:last-child td { border-bottom: none; }
+
+.role-table td:first-child {
+  font-weight: bold;
+  white-space: nowrap;
+  width: 120px;
+}
+
+/* divider */
+hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 48px 0;
+}
+
+/* footer */
+.footer {
+  border-top: 2px solid var(--ink);
+  padding-top: 16px;
+  font-size: 11px;
+  color: var(--mid);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 80px;
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <span class="repo">pfolnovic23 / PRRI-Mode72026</span>
+    <span>G3P5 · The Last Zeppelin · 2026.</span>
+  </div>
+
+  <h1>Git<br><span class="accent">Workflow</span></h1>
+  <p class="byline">Kako koristimo GitHub — branchevi, issues, pull requesti.<br>Pročitaj jednom, pa zaboravi da si čitao.</p>
+
+  <!-- ZAŠTO -->
+  <div class="block">
+    <div class="section-label">Uvod</div>
+    <h2>Zašto ovo uopće koristimo</h2>
+    <p>Nas šest radi na istom kodu. Bez dogovora — netko će pregaziti tuđi rad, nešto će se slučajno obrisati, i nitko neće znati tko je što napravio i kada.</p>
+    <p>Tri stvari rješavaju taj problem: <strong>Issues</strong> (što treba napraviti), <strong>Branchevi</strong> (izoliran prostor dok radiš) i <strong>Pull Requesti</strong> (provjera prije spajanja).</p>
+  </div>
+
+  <!-- BRANCHEVI -->
+  <div class="block">
+    <div class="section-label">Branchevi</div>
+    <h2>Struktura grana</h2>
+
+    <p>Imamo tri razine:</p>
+
+    <div class="tree">
+<span class="red">main</span>          <span class="dim">← uvijek radi, igriva verzija, ne dira se</span>
+  │
+  └── <span class="green">dev</span>       <span class="dim">← ovdje se spajaju gotovi featurei</span>
+        │
+        ├── <span class="blue">feature/player-movement</span>   <span class="dim">← Pavel radi ovdje</span>
+        ├── <span class="blue">feature/level-manager</span>     <span class="dim">← Luka radi ovdje</span>
+        ├── <span class="blue">feature/boss-battle</span>       <span class="dim">← Pavel + Luka</span>
+        ├── <span class="orange">art/player-sprite</span>         <span class="dim">← Bartol</span>
+        └── <span class="orange">sound/sfx-shooting</span>        <span class="dim">← Ivan</span>
+    </div>
+
+    <div class="rule" data-label="Pravilo">
+      <p>Nitko ne pusha direktno na <code>main</code>. Programeri ne pushaju direktno na <code>dev</code> — rade na feature branchu pa otvaraju PR. Bartol i Ivan mogu pushati direktno na <code>dev</code> jer PNG i MP3 ne mogu breakati kod.</p>
+    </div>
+
+    <p>Tijek:</p>
+    <div class="flow">
+      <div class="fn feat">feature/xxx</div>
+      <div class="fa">→ PR →</div>
+      <div class="fn dev">dev</div>
+      <div class="fa">→ PR →</div>
+      <div class="fn main">main</div>
+    </div>
+    <p style="font-size:12px; color:var(--mid);">dev → main ide samo kad više featurea radi zajedno i build je stabilan. Otprilike jednom tjedno.</p>
+
+    <h2 style="margin-top:28px;">Kako se zovu branchevi</h2>
+    <p>Format: <code>tip/kratki-opis</code></p>
+    <pre>
+<span class="g">feature/</span>player-movement     <span class="c"># nova funkcionalnost</span>
+<span class="g">feature/</span>boss-battle
+<span class="g">feature/</span>score-system
+<span class="y">art/</span>player-sprite            <span class="c"># assetsi, grafika</span>
+<span class="y">art/</span>boss-sprite
+<span class="y">sound/</span>sfx-pack
+<span class="r">fix/</span>enemy-collision-bug      <span class="c"># bugfixevi</span>
+<span class="r">fix/</span>mode7-fps-drop
+    </pre>
+    <p style="font-size:12px; color:var(--mid);">Sve malim slovima, crtice umjesto razmaka, kratko i jasno.</p>
+  </div>
+
+  <!-- KONKRETAN FLOW -->
+  <div class="block">
+    <div class="section-label">Svaki dan</div>
+    <h2>Konkretni koraci od nule do merge</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <h4>Uzmi zadnji dev</h4>
+          <p>Uvijek počni s najnovijom verzijom da ne radiš na starom kodu.</p>
+          <pre>
+git checkout dev
+git pull origin dev
+          </pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <h4>Napravi svoju granu</h4>
+          <p>Za svaki issue — posebna grana. Ne radi dva featurea na jednoj grani.</p>
+          <pre>
+git checkout -b feature/player-movement
+          </pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <h4>Radi i commitaj često</h4>
+          <p>Svaki commit = jedna logična promjena. Commit poruka počinje glagolom, referencira issue brojem.</p>
+          <pre>
+git add .
+git commit -m <span class="y">"feat: WASD movement in world space (#7)"</span>
+git commit -m <span class="y">"fix: normalize diagonal speed (#7)"</span>
+          </pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">04</div>
+        <div>
+          <h4>Pushaj na GitHub</h4>
+          <pre>
+git push origin feature/player-movement
+          </pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">05</div>
+        <div>
+          <h4>Otvori Pull Request na GitHubu</h4>
+          <p>Na GitHubu — Compare &amp; pull request → base: <code>dev</code>. U opisu napiši <code>closes #7</code> i GitHub automatski zatvori issue kad se mergea. Assignaj jednu osobu za review.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">06</div>
+        <div>
+          <h4>Review i merge</h4>
+          <p>Jedna osoba pogleda kod, ostavi komentar ako nešto ne valja ili odobri. Onda merge. Grana se briše, issue je zatvoren.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ISSUES -->
+  <div class="block">
+    <div class="section-label">Issues</div>
+    <h2>Kako pisati issues</h2>
+
+    <p><strong>Jedno pravilo:</strong> issue mora biti nešto što možeš zatvoriti sam za 1 do 3 dana. Ako ne možeš — razlomi ga na više issua.</p>
+
+    <div class="compare">
+      <div class="bad">
+        <div class="verdict">✕ loše — pregrub</div>
+        <p>Implementirati mehanike igrača</p>
+      </div>
+      <div class="good">
+        <div class="verdict">✓ dobro — konkretan</div>
+        <p>Dodati WASD kretanje igrača u Mode7 world spaceu</p>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="bad">
+        <div class="verdict">✕ loše — to je osoba</div>
+        <p>Pavel — programiranje</p>
+      </div>
+      <div class="good">
+        <div class="verdict">✓ dobro — to je zadatak</div>
+        <p>Implementirati cooldown između hitaca igrača</p>
+      </div>
+    </div>
+
+    <p style="margin-top:20px;">Naslov issuea počinje glagolom i opisuje <em>što</em> treba napraviti:</p>
+    <pre>
+<span class="g">Dodati</span> WASD kretanje igrača
+<span class="g">Implementirati</span> cooldown između hitaca
+<span class="g">Popraviti</span> bug gdje projectile prolazi kroz playera
+<span class="g">Napraviti</span> sprite za boss zeppelin (idle animacija)
+<span class="g">Integrirati</span> shooting SFX u pygame mixer
+    </pre>
+
+    <h2 style="margin-top:28px;">Labeli</h2>
+    <p>Svaki issue dobiva label i assigneea. Koristimo iste kategorije kao u gantogramu:</p>
+    <p style="margin-top:12px;">
+      <span class="chip chip-plan">Planiranje/Dizajn</span>
+      <span class="chip chip-prog">Programiranje</span>
+      <span class="chip chip-art">Grafika/Art</span>
+      <span class="chip chip-snd">Zvuk</span>
+      <span class="chip chip-test">Testiranje</span>
+      <span class="chip chip-doc">Dokumentacija</span>
+      <span class="chip chip-bug">bug</span>
+    </p>
+  </div>
+
+  <hr>
+
+  <!-- ULOGE -->
+  <div class="block">
+    <div class="section-label">Tim</div>
+    <h2>Tko što radi (i kako)</h2>
+
+    <table class="role-table">
+      <thead>
+        <tr>
+          <th>Osoba</th>
+          <th>Zaduženja (iz gantograma)</th>
+          <th>Git workflow</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pavel</td>
+          <td>Refaktor baze, igrač mehanike, neprijatelji AI, power-up sustav, boss battle, audio implementacija</td>
+          <td>Feature branch → PR → dev, uvijek</td>
+        </tr>
+        <tr>
+          <td>David</td>
+          <td>Refaktor baze, Mode 7 renderer, level manager, GitHub &amp; README</td>
+          <td>Feature branch → PR → dev, uvijek</td>
+        </tr>
+        <tr>
+          <td>Luka</td>
+          <td>Igrač mehanike, level manager, boss battle</td>
+          <td>Feature branch → PR → dev, uvijek</td>
+        </tr>
+        <tr>
+          <td>Jan</td>
+          <td>Neprijatelji AI, power-up sustav, score &amp; progression, pozadine &amp; Mode7, UI/HUD grafika, GitHub &amp; README</td>
+          <td>Feature branch → PR → dev, uvijek</td>
+        </tr>
+        <tr>
+          <td>Bartol</td>
+          <td>Vizualni koncept, sprite-ovi (igrač, neprijatelji, boss), pozadine &amp; Mode7, UI/HUD grafika, itch.io stranica</td>
+          <td>PNG/aseprite direktno na dev, bez PR</td>
+        </tr>
+        <tr>
+          <td>Ivan</td>
+          <td>GDD izrada, SFX dizajn, glazba (3 tracka), audio implementacija, itch.io stranica, prezentacija</td>
+          <td>MP3/WAV direktno na dev, bez PR</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- COMMIT PORUKE -->
+  <div class="block">
+    <div class="section-label">Commitanje</div>
+    <h2>Commit poruke</h2>
+
+    <p>Format: <code>tip: opis (#broj_issuea)</code></p>
+
+    <pre>
+<span class="g">feat</span>: dodati health drop spawn logiku (#9)
+<span class="r">fix</span>: popraviti dijeljenje s nulom u mode7 renderer (#3)
+<span class="y">refactor</span>: razdvojiti App klasu u managere (#1)
+<span class="w">docs</span>: dodati CLAUDE.md za agentic tools
+<span class="w">asset</span>: player zeppelin sprite sheet v1
+    </pre>
+
+    <div class="rule" data-label="Napomena">
+      <p>Referenca <code>#7</code> u commit poruci linkuje commit s issuem na GitHubu. <code>closes #7</code> u PR opisu zatvara issue automatski pri mergeu.</p>
+    </div>
+  </div>
+
+  <!-- PULL REQUEST -->
+  <div class="block">
+    <div class="section-label">Pull Request</div>
+    <h2>Kako otvoriti i mergeat PR</h2>
+
+    <p>PR otvara osoba koja je završila feature. Odobrava netko drugi iz tima — bilo tko od programera, nema posebne hijerarhije, samo ne odobrava sam sebi.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <h4>Pushaš granu na GitHub</h4>
+          <pre>git push origin feature/player-movement</pre>
+          <p>GitHub ti odmah pokaže žuti banner na vrhu repoa: <em>"feature/player-movement had recent pushes"</em> s gumbom <strong>Compare &amp; pull request</strong>. Klikni to.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <h4>Popuni formu</h4>
+          <p>Otvori se stranica s nekoliko polja:</p>
+          <ul style="margin-top:8px; font-size:13px; color:#333;">
+            <li><strong>base:</strong> postavi na <code>dev</code> (ne main)</li>
+            <li><strong>Title:</strong> npr. <em>Player movement (#7)</em></li>
+            <li><strong>Description:</strong> napiši <code>closes #7</code> samo ako je taj issue <strong>potpuno gotov</strong> i više se neće ništa mijenjati na tom dijelu — GitHub će ga automatski zatvoriti pri mergeu. Ako PR rješava issue samo djelomično, nemoj pisati <code>closes</code>, samo referencu: <code>#7</code></li>
+            <li><strong>Reviewers</strong> (desna strana): assignaj jednu osobu, npr. Davida</li>
+          </ul>
+          <p style="margin-top:8px;">Klikni <strong>Create pull request</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <h4>Review (David/netko drugi)</h4>
+          <p>Reviewer dobije email/notifikaciju. Ode na GitHub → <em>Pull requests</em> → odabere tvoj PR. Vidi diff — što si promijenio liniju po liniju. Može ostaviti komentar na konkretnoj liniji ili kliknuti <strong>Approve</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">04</div>
+        <div>
+          <h4>Merge</h4>
+          <p>Nakon approvea, bilo autor ili reviewer klikne <strong>Merge pull request</strong> → <strong>Confirm merge</strong>. Grana se briše, issue #7 je zatvoren, kod je u <code>dev</code>.</p>
+          <p style="margin-top:6px;">Ostali u timu trebaju napraviti <code>git pull origin dev</code> da dobiju promjene.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- MERGE CONFLICTI -->
+  <div class="block">
+    <div class="section-label">Merge Conflicti</div>
+    <h2>Što je merge conflict i zašto se dogodi</h2>
+
+    <p>Workflow s branchevima <strong>ne garantira</strong> da nema conflicata. Conflict nastaje u dva slučaja:</p>
+    <ul style="margin: 10px 0 14px; font-size:13px; color:#333;">
+      <li><strong>Različite grane:</strong> Pavel i David oba mijenjaju isti dio <code>game.py</code> na različitim branchevima. David mergea prvi. Kad Pavel otvori PR, Git ne zna čiju verziju uzeti.</li>
+      <li><strong>Ista grana:</strong> Dva člana tima rade na istoj grani (npr. oba pushaju direktno na <code>dev</code>). Jedan pusha, drugi ima stariju verziju i kad on pusha — conflict. Ovo je još jedan razlog zašto programeri ne pushaju direktno na dev.</li>
+    </ul>
+
+    <div class="rule" data-label="Kako izgledaju conflict markeri u fajlu">
+      <pre style="margin:0; border-left:none; padding:12px 0 0 0; background:transparent; color:var(--ink); font-size:12px; line-height:1.8;">
+<span style="color:#c05050">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (tvoja grana)</span>
+    self.enemies = [e for e in self.enemies if e.alive]
+<span style="color:#888">=======</span>
+    self.enemies = [e for e in self.enemies if e.alive and e.visible]
+<span style="color:#5daa85">&gt;&gt;&gt;&gt;&gt;&gt;&gt; dev</span>
+      </pre>
+      <p style="margin-top:8px; font-size:13px;">Gornji dio (crveno) = tvoj kod. Donji dio (zeleno) = kod iz deva. Ti odlučuješ što ostaje.</p>
+    </div>
+
+    <h2 style="margin-top:28px;">Kako riješiti conflict u VS Code</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <h4>VS Code automatski detektira conflict</h4>
+          <p>Kad pokušaš mergeat ili rebaseat i dođe do conflicta, VS Code pokaže fajlove s konfliktom u Source Control panelu (lijeva traka, ikona razgranate ceste). Fajlovi su označeni narančastim <strong>!</strong> znakom.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <h4>Otvori conflicted fajl</h4>
+          <p>VS Code prikaže inline conflict editor s tri gumba iznad svakog konflikta:</p>
+          <ul style="font-size:13px; color:#333; margin-top:6px;">
+            <li><strong>Accept Current Change</strong> — uzmi tvoju verziju</li>
+            <li><strong>Accept Incoming Change</strong> — uzmi verziju iz deva</li>
+            <li><strong>Accept Both Changes</strong> — zadrži oboje (jedno ispod drugog)</li>
+          </ul>
+          <p style="margin-top:6px;">Ako niti jedan gumb ne odgovara — ručno editaš taj dio fajla, obrišeš conflict markere (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>) i napišeš točno što treba stajati.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <h4>Commitaj resolution</h4>
+          <p>Nakon što riješiš sve konflikte u svim fajlovima:</p>
+          <pre>
+git add .
+git commit -m <span class="y">"fix: resolve merge conflict in game.py"</span>
+          </pre>
+          <p>Onda nastavljaš normalno — pushaš, PR se ažurira.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule" data-label="Kako smanjiti konflikte">
+      <p>Komunicirajte tko radi na kojem fajlu. Ako Pavel i David oba trebaju mijenjati <code>game.py</code> — neka jedan završi i mergea, pa drugi počne od tog. Brancheve ažurirajte često: <code>git rebase origin/dev</code> povuče tuđe promjene u tvoju granu rano, dok su conflicti mali.</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- KRATKI CHEATSHEET -->
+  <div class="block">
+    <div class="section-label">Cheatsheet</div>
+    <h2>Brzi referentni popis</h2>
+
+    <pre>
+<span class="c"># počni novi zadatak</span>
+git checkout dev
+git pull origin dev
+git checkout -b feature/moj-zadatak
+
+<span class="c"># radi, commitaj</span>
+git add .
+git commit -m <span class="y">"feat: opis (#broj)"</span>
+
+<span class="c"># pushaj</span>
+git push origin feature/moj-zadatak
+
+<span class="c"># ažuriraj svoju granu ako je dev napredovao</span>
+git fetch origin
+git rebase origin/dev
+
+<span class="c"># provjeri gdje si</span>
+git status
+git log --oneline -10
+    </pre>
+  </div>
+
+  <div class="footer">
+    <span>The Last Zeppelin · G3P5 · FOI 2026.</span>
+    <span>git workflow v1.1</span>
+  </div>
+
+</div>
+</body>
+</html>
