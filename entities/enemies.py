@@ -18,31 +18,30 @@ class Enemy:
         self.shoot_timer = random.randint(0, self.shoot_delay)
         self.damage = damage
         self.circle_direction = random.choice([-1, 1])
+        self.hit_radius = 0.55
+        self.contact_radius = 0.42
+        self.bullet_hit_radius = 0.18
 
     def update(self, player_pos):
         direction = player_pos - self.pos
         distance = np.linalg.norm(direction)
 
-        if distance < self.min_distance:
-            # Circle around the player
-            direction /= distance
+        if distance > 0:
+            if distance < self.min_distance:
+                direction /= distance
+                perp_direction = np.array([-direction[1], direction[0]]) * self.circle_direction
+                self.pos += perp_direction * self.speed
+            else:
+                direction /= distance
+                self.pos += direction * self.speed
 
-            # Perpendicular vector (2D): rotate 90 degrees
-            perp_direction = np.array([-direction[1], direction[0]]) * self.circle_direction
-
-            self.pos += perp_direction * self.speed
-        else:
-            # Move directly toward the player
-            direction /= distance
-            self.pos += direction * self.speed
-
-        # Shooting logic
         self.shoot_timer -= 1
         if self.shoot_timer <= 0:
             self.shoot(player_pos)
             self.shoot_timer = self.shoot_delay
 
-        # Update bullets
+        self.hit_timer = max(0, self.hit_timer - 1)
+
         for bullet in self.bullets:
             bullet.update()
         self.bullets = [b for b in self.bullets if b.active]
@@ -53,7 +52,7 @@ class Enemy:
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.08)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius)
         self.bullets.append(bullet)
 
     def draw(self, screen, mode7):
@@ -64,8 +63,12 @@ class Enemy:
             screen.blit(scaled_texture, (int(screen_x) - scale // 2, int(screen_y) - scale // 2))
 
             hp_bar_width = scale
-            hp_bar_rect = pg.Rect(int(screen_x - hp_bar_width / 2), int(screen_y - scale // 2 - 10),
-                                  int(hp_bar_width), 5)
+            hp_bar_rect = pg.Rect(
+                int(screen_x - hp_bar_width / 2),
+                int(screen_y - scale // 2 - 10),
+                int(hp_bar_width),
+                5,
+            )
             pg.draw.rect(screen, (100, 0, 0), hp_bar_rect)
             hp_ratio = self.hp / self.max_hp
             green_bar_width = int(hp_bar_rect.width * hp_ratio)
@@ -76,7 +79,7 @@ class Enemy:
             bullet.draw(screen, mode7)
 
     def check_collision(self, projectile):
-        if np.linalg.norm(self.pos - projectile.pos) < 0.6:
+        if np.linalg.norm(self.pos - projectile.pos) < self.hit_radius + projectile.hit_radius:
             self.hit_timer = 10
             self.hp -= 50
             if self.hp <= 0:
@@ -91,14 +94,17 @@ class TankEnemy(Enemy):
         self.hp = 400
         self.max_hp = 400
         self.shoot_delay = 300
-    
+        self.hit_radius = 0.72
+        self.contact_radius = 0.5
+        self.bullet_hit_radius = 0.22
+
     def shoot(self, player_pos):
         direction = player_pos - self.pos
         norm = np.linalg.norm(direction)
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.16)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius)
         self.bullets.append(bullet)
 
 class FastEnemy(Enemy):
@@ -109,6 +115,8 @@ class FastEnemy(Enemy):
         self.max_hp = 1
         self.shoot_delay = None  # Not used
         self.bullets = []  # No bullets
+        self.hit_radius = 0.4
+        self.contact_radius = 0.34
 
     def update(self, player_pos):
         direction = player_pos - self.pos
@@ -120,5 +128,3 @@ class FastEnemy(Enemy):
 
     def shoot(self, player_pos):
         pass  # Disable shooting
-
-    
