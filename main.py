@@ -42,46 +42,6 @@ class App:
         self.speed_timer = time.time() + duration
         print(f"[SPEED] Boost applied: x{multiplier} fo r {duration}s")
 
-
-
-    def show_results_screen(self):
-        time_survived = int(time.time() - self.start_time)
-        enemies_killed = self.enemies_killed
-        waves_survived = self.game.wave
-
-        results_screen = ResultsScreen(self.screen, time_survived, enemies_killed, waves_survived)
-        results_screen.update()
-        results_screen.draw()
-
-
-#    def game_over_screen(self):
-#        time_survived = int(time.time() - self.start_time)
-#        enemies_killed = self.enemies_killed
-#        waves_survived = self.game.wave
-
-#        results_screen = ResultsScreen(self.screen, time_survived, enemies_killed, waves_survived)
-#        
-#        while not results_screen.is_done():
-#            results_screen.update()
-#            results_screen.draw()
-#            pg.time.Clock().tick(60)
-#        self.wait_for_input_after_game_over()
-
-    def wait_for_input_after_game_over(self):
-        waiting_for_input = True
-        while waiting_for_input:
-            for event in pg.event.get():
-                if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
-                    pg.quit()
-                    sys.exit()
-                elif event.type == pg.KEYDOWN and event.key == pg.K_r:
-                    self.__init__()
-                    self.state = MENU
-                    waiting_for_input = False
-                elif event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                    self.state = MENU
-                    waiting_for_input = False
-
     def update(self):
         if self.state == MENU:
             self.menu.update()
@@ -154,12 +114,6 @@ class App:
                     self.results_screen = None
             elif self.state == GAME and self.player.is_dead() and event.type == pg.KEYDOWN and event.key == pg.K_r:
                 self.__init__()
-#            elif event.type == pg.KEYDOWN and event.key == pg.K_j:
-#                self.weapon = REVOLVER
-#            elif event.type == pg.KEYDOWN and event.key == pg.K_k:
-#                self.weapon = SHOTGUN
-#            elif event.type == pg.KEYDOWN and event.key == pg.K_l:
-#                self.weapon = MINIGUN
             elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 self.shooting = True
                 direction = np.array([np.cos(self.mode7.angle), np.sin(self.mode7.angle)])
