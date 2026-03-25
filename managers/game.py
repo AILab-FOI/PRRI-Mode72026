@@ -21,7 +21,7 @@ class Game:
         self.level_manager.spawn_wave(self.wave)
 
     def spawn_wave(self, wave_num):
-        # TODO: remove this wrapper when all call sites use LevelManager directly.
+        # TODO: replace LevelManager.spawn_wave() with 4 defined levels per GDD when level design is finalized
         self.level_manager.spawn_wave(wave_num)
 
     def update(self, player_pos):

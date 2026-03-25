@@ -1,3 +1,4 @@
+# TODO: replace infinite wave system with 4 defined levels (see GDD)
 import random
 
 from entities.enemies import Enemy, FastEnemy, TankEnemy
