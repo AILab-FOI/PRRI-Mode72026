@@ -47,11 +47,11 @@ class Game:
         for enemy in self.enemies:
             enemy.update(player_pos)
             for bullet in enemy.bullets:
-                if np.linalg.norm(np.array(player_pos) - bullet.pos) < 0.5:
+                if np.linalg.norm(np.array(player_pos) - bullet.pos) < self.player.hit_radius + bullet.hit_radius:
                     self.player.take_damage(enemy.damage)
                     bullet.active = False
             if isinstance(enemy, FastEnemy):
-                if np.linalg.norm(np.array(player_pos) - enemy.pos) < 0.5:
+                if np.linalg.norm(np.array(player_pos) - enemy.pos) < self.player.hit_radius + enemy.contact_radius:
                     self.player.take_damage(enemy.damage)
                     self.explosion_sound.play()
                     enemy.alive = False
