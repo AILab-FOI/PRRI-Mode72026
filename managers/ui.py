@@ -87,10 +87,10 @@ class UIManager:
                 bar_clip = self.bar_full.subsurface((0, 0, full_width, self.bar_full.get_height()))
                 self.screen.blit(bar_clip, (x, y))
 
-        if self.app.speed_multiplier > 1.0 and time.time() < self.app.speed_timer:
+        if self.app.player.speed_multiplier > 1.0 and time.time() < self.app.player.speed_timer:
             x2, y2 = 1440, 180
             total = 5.4
-            remaining = self.app.speed_timer - time.time()
+            remaining = self.app.player.speed_timer - time.time()
             percent = max(0, min(1, remaining / total))
 
             full_height = int(self.bar_speed.get_height() * percent)

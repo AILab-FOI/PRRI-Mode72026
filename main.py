@@ -1,7 +1,6 @@
 import pygame as pg
 import sys
 import time
-import numpy as np
 
 from core.mode7 import Mode7
 from entities.player import Player
@@ -25,8 +24,6 @@ class App:
         self.menu = Menu(self)
         self.ui_manager = UIManager(self)
         self.state = MENU
-        self.speed_multiplier = 1.0
-        self.speed_timer = 0
         self.minigun_last_shot = 0
         self.weapon = WeaponType.REVOLVER
         self.weapon_timer = 0
@@ -38,9 +35,7 @@ class App:
         self.audio.play_menu_music()
         
     def apply_speed_boost(self, multiplier, duration=5):
-        self.speed_multiplier = multiplier
-        self.speed_timer = time.time() + duration
-        print(f"[SPEED] Boost applied: x{multiplier} fo r {duration}s")
+        self.player.apply_speed_boost(multiplier, duration)
 
     def update(self):
         if self.state == MENU:
@@ -61,7 +56,8 @@ class App:
                     self.game.wave
                 )
                 return
-            player_pos = self.mode7.pos
+            self.player.update(pg.key.get_pressed())
+            player_pos = self.player.pos
             self.mode7.update()
             self.game.update(player_pos)
             if self.weapon_timer > 0 and time.time() > self.weapon_timer:
@@ -71,13 +67,10 @@ class App:
                 now = time.time()
                 if now - self.minigun_last_shot > 0.1:
                     self.audio.play_shotgun()
-                    self.game.shoot_minigun(self.mode7.pos, self.mode7.angle)
+                    self.game.shoot_minigun(self.player.pos, self.player.angle)
                     self.minigun_last_shot = now
             self.clock.tick()
             pg.display.set_caption(f'{self.clock.get_fps():.1f}')
-            if self.speed_multiplier != 1.0 and time.time() > self.speed_timer:
-                self.speed_multiplier = 1.0
-                print("[SPEED] Boost expired")
 
 
         elif self.state == GAME_OVER:
@@ -117,16 +110,15 @@ class App:
                 self.__init__()
             elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 self.shooting = True
-                direction = np.array([np.cos(self.mode7.angle), np.sin(self.mode7.angle)])
                 if self.weapon == WeaponType.REVOLVER:
                     self.audio.play_shotgun()
-                    self.game.shoot_revolver(self.mode7.pos, self.mode7.angle)
+                    self.game.shoot_revolver(self.player.pos, self.player.angle)
                 elif self.weapon == WeaponType.SHOTGUN:
                     self.audio.play_shotgun()
-                    self.game.shoot_shotgun(self.mode7.pos, self.mode7.angle)
+                    self.game.shoot_shotgun(self.player.pos, self.player.angle)
                 elif self.weapon == WeaponType.MINIGUN:
                     self.audio.play_shotgun()
-                    self.game.shoot_minigun(self.mode7.pos, self.mode7.angle)
+                    self.game.shoot_minigun(self.player.pos, self.player.angle)
             elif event.type == pg.KEYUP and event.key == pg.K_SPACE:
                 self.shooting = False
 
