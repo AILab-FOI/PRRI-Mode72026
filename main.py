@@ -37,10 +37,13 @@ class App:
         self.enemies_killed = 0
         self.results_screen = None
         self.shooting = False
+        self.status_message = ""
+        self.status_message_until = 0
         self.audio.play_menu_music()
         
     def apply_speed_boost(self, multiplier, duration=5):
         self.player.apply_speed_boost(multiplier, duration)
+        self.show_status_message(f"Speed boost x{multiplier:.1f}", duration=1.6)
 
     def update(self):
         if self.state == MENU:
@@ -120,6 +123,11 @@ class App:
         self.weapon = weapon_type
         self.weapon_timer = time.time() + 10
         self.audio.play_powerup()
+        self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
+
+    def show_status_message(self, message, duration=1.8):
+        self.status_message = message
+        self.status_message_until = time.time() + duration
 
     def can_fire_weapon(self):
         cooldown = self.weapon_cooldowns[self.weapon]
