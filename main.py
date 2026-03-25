@@ -24,9 +24,14 @@ class App:
         self.menu = Menu(self)
         self.ui_manager = UIManager(self)
         self.state = MENU
-        self.minigun_last_shot = 0
+        self.last_shot_time = 0
         self.weapon = WeaponType.REVOLVER
         self.weapon_timer = 0
+        self.weapon_cooldowns = {
+            WeaponType.REVOLVER: 0.34,
+            WeaponType.SHOTGUN: 0.58,
+            WeaponType.MINIGUN: 0.09,
+        }
 
         self.start_time = time.time()
         self.enemies_killed = 0
@@ -60,15 +65,8 @@ class App:
             player_pos = self.player.pos
             self.mode7.update()
             self.game.update(player_pos)
-            if self.weapon_timer > 0 and time.time() > self.weapon_timer:
-                self.weapon = WeaponType.REVOLVER
-                self.weapon_timer = 0
             if self.weapon == WeaponType.MINIGUN and self.shooting:
-                now = time.time()
-                if now - self.minigun_last_shot > 0.1:
-                    self.audio.play_shotgun()
-                    self.game.shoot_minigun(self.player.pos, self.player.angle)
-                    self.minigun_last_shot = now
+                self.try_fire_weapon()
             self.clock.tick()
             pg.display.set_caption(f'{self.clock.get_fps():.1f}')
 
@@ -108,18 +106,10 @@ class App:
                     self.results_screen = None
             elif self.state == GAME and self.player.is_dead() and event.type == pg.KEYDOWN and event.key == pg.K_r:
                 self.__init__()
-            elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+            elif self.state == GAME and event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 self.shooting = True
-                if self.weapon == WeaponType.REVOLVER:
-                    self.audio.play_shotgun()
-                    self.game.shoot_revolver(self.player.pos, self.player.angle)
-                elif self.weapon == WeaponType.SHOTGUN:
-                    self.audio.play_shotgun()
-                    self.game.shoot_shotgun(self.player.pos, self.player.angle)
-                elif self.weapon == WeaponType.MINIGUN:
-                    self.audio.play_shotgun()
-                    self.game.shoot_minigun(self.player.pos, self.player.angle)
-            elif event.type == pg.KEYUP and event.key == pg.K_SPACE:
+                self.try_fire_weapon()
+            elif self.state == GAME and event.type == pg.KEYUP and event.key == pg.K_SPACE:
                 self.shooting = False
 
     def switch_to_game(self):
@@ -130,6 +120,28 @@ class App:
         self.weapon = weapon_type
         self.weapon_timer = time.time() + 10
         self.audio.play_powerup()
+
+    def can_fire_weapon(self):
+        cooldown = self.weapon_cooldowns[self.weapon]
+        return time.time() - self.last_shot_time >= cooldown
+
+    def try_fire_weapon(self):
+        if not self.can_fire_weapon():
+            return False
+
+        if self.weapon == WeaponType.REVOLVER:
+            self.audio.play_revolver()
+            self.game.shoot_revolver(self.player.pos, self.player.angle)
+        elif self.weapon == WeaponType.SHOTGUN:
+            self.audio.play_shotgun()
+            self.game.shoot_shotgun(self.player.pos, self.player.angle)
+        elif self.weapon == WeaponType.MINIGUN:
+            self.audio.play_minigun()
+            self.game.shoot_minigun(self.player.pos, self.player.angle)
+
+        now = time.time()
+        self.last_shot_time = now
+        return True
 
     def run(self):
         while True:
