@@ -46,8 +46,9 @@ class App:
         if self.state == MENU:
             self.menu.update()
         # Reset weapon after timer
-        if self.weapon != WeaponType.REVOLVER and time.time() > self.weapon_timer:
+        if self.weapon != WeaponType.REVOLVER and self.weapon_timer > 0 and time.time() > self.weapon_timer:
             self.weapon = WeaponType.REVOLVER
+            self.weapon_timer = 0
             print("[TIMER] Power-up expired")
         elif self.state == GAME:
             if self.player.is_dead():
@@ -63,9 +64,9 @@ class App:
             player_pos = self.mode7.pos
             self.mode7.update()
             self.game.update(player_pos)
-            if hasattr(self, 'weapon_timer') and time.time() > self.weapon_timer:
+            if self.weapon_timer > 0 and time.time() > self.weapon_timer:
                 self.weapon = WeaponType.REVOLVER
-                del self.weapon_timer
+                self.weapon_timer = 0
             if self.weapon == WeaponType.MINIGUN and self.shooting:
                 now = time.time()
                 if now - self.minigun_last_shot > 0.1:
