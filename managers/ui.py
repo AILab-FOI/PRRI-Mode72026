@@ -75,6 +75,7 @@ class UIManager:
         self.screen.blit(enemy_number, (text_x + 25, enemy_number_y))
 
         self.draw_health()
+        self.draw_status_message()
 
         if self.app.weapon != WeaponType.REVOLVER and time.time() < self.app.weapon_timer:
             x, y = 85, 600
@@ -110,6 +111,14 @@ class UIManager:
         x = self.screen.get_width() - self.scaled_width - 10
         y = 10
         self.screen.blit(self.health_bar_frames[health_index], (x, y))
+        if self.app.player.is_invulnerable() and (pg.time.get_ticks() // 90) % 2 == 0:
+            pg.draw.rect(
+                self.screen,
+                (255, 231, 163),
+                (x + 22, y + 28, self.scaled_width - 44, self.scaled_height - 60),
+                3,
+                border_radius=10,
+            )
 
     def draw_weapon_ui(self):
         padding = 20
@@ -128,3 +137,16 @@ class UIManager:
         icon_x = frame_rect.x + (frame_rect.width - icon.get_width()) // 2
         icon_y = frame_rect.y + (frame_rect.height - icon.get_height()) // 2
         self.screen.blit(icon, (icon_x, icon_y))
+
+    def draw_status_message(self):
+        if time.time() >= self.app.status_message_until or not self.app.status_message:
+            return
+
+        font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
+        text = font.render(self.app.status_message, True, (255, 230, 190))
+        padding_x, padding_y = 30, 16
+        box = pg.Rect(0, 0, text.get_width() + padding_x * 2, text.get_height() + padding_y * 2)
+        box.center = (self.screen.get_width() // 2, self.screen.get_height() - 90)
+        pg.draw.rect(self.screen, (36, 24, 14), box, border_radius=14)
+        pg.draw.rect(self.screen, (173, 130, 78), box, 2, border_radius=14)
+        self.screen.blit(text, (box.x + padding_x, box.y + padding_y))
