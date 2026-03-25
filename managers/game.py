@@ -21,7 +21,7 @@ class Game:
         self.level_manager.spawn_wave(self.wave)
 
     def spawn_wave(self, wave_num):
-        # TODO: remove this wrapper when all call sites use LevelManager directly.
+        # TODO: replace LevelManager.spawn_wave() with 4 defined levels per GDD when level design is finalized
         self.level_manager.spawn_wave(wave_num)
 
     def update(self, player_pos):
@@ -56,7 +56,7 @@ class Game:
                     self.explosion_sound.play()
                     enemy.alive = False
 
-        self.enemies = [e for e in self.enemies if e.alive]
+        self.enemies[:] = [e for e in self.enemies if e.alive]
 
         for drop in self.drops:
             drop.update(player_pos)

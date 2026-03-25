@@ -16,6 +16,19 @@ class UIManager:
             WeaponType.SHOTGUN: pg.image.load("assets/textures/powerups/shotgun_steampunk.png").convert_alpha(),
             WeaponType.MINIGUN: pg.image.load("assets/textures/powerups/minigun_steampunk.png").convert_alpha(),
         }
+        health_bar_sprite = pg.image.load("assets/textures/ui/Steampunk_healthbar_anim.png").convert_alpha()
+        self.frame_width = 64
+        self.frame_height = 64
+        self.scaled_width = int(self.frame_width * 3)
+        self.scaled_height = int(self.frame_height * 3)
+        self.total_frames = 7
+        self.health_bar_frames = []
+        for i in range(self.total_frames):
+            x = i * self.frame_width
+            y = 0
+            frame = health_bar_sprite.subsurface(pg.Rect(x, y, self.frame_width, self.frame_height))
+            scaled_frame = pg.transform.scale(frame, (self.scaled_width, self.scaled_height))
+            self.health_bar_frames.append(scaled_frame)
 
         self.progression_box = pg.image.load("assets/textures/ui/progression_blank.png").convert_alpha()
         self.progression_box = pg.transform.scale(self.progression_box, (200, 200))
@@ -61,7 +74,7 @@ class UIManager:
         self.screen.blit(enemy_label, (text_x, enemy_y))
         self.screen.blit(enemy_number, (text_x + 25, enemy_number_y))
 
-        self.app.player.draw_health(self.screen)
+        self.draw_health()
 
         if self.app.weapon != WeaponType.REVOLVER and time.time() < self.app.weapon_timer:
             x, y = 85, 600
@@ -74,10 +87,10 @@ class UIManager:
                 bar_clip = self.bar_full.subsurface((0, 0, full_width, self.bar_full.get_height()))
                 self.screen.blit(bar_clip, (x, y))
 
-        if self.app.speed_multiplier > 1.0 and time.time() < self.app.speed_timer:
+        if self.app.player.speed_multiplier > 1.0 and time.time() < self.app.player.speed_timer:
             x2, y2 = 1440, 180
             total = 5.4
-            remaining = self.app.speed_timer - time.time()
+            remaining = self.app.player.speed_timer - time.time()
             percent = max(0, min(1, remaining / total))
 
             full_height = int(self.bar_speed.get_height() * percent)
@@ -87,6 +100,16 @@ class UIManager:
                 )
                 rotated_clip = pg.transform.rotate(bar_clip, 0)
                 self.screen.blit(rotated_clip, (x2, y2 + (self.bar_speed.get_height() - full_height)))
+
+    def draw_health(self):
+        health_index = 6 - (self.app.player.health // 5)
+        if health_index >= 30 or health_index <= 0:
+            health_index = 0
+        if self.app.player.health <= 4 and self.app.player.health >= 1:
+            health_index = 5
+        x = self.screen.get_width() - self.scaled_width - 10
+        y = 10
+        self.screen.blit(self.health_bar_frames[health_index], (x, y))
 
     def draw_weapon_ui(self):
         padding = 20

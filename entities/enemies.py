@@ -118,9 +118,6 @@ class FastEnemy(Enemy):
             direction /= distance
             self.pos += direction * self.speed
 
-        # No shooting
-        self.bullets = []
-
     def shoot(self, player_pos):
         pass  # Disable shooting
 
