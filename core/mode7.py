@@ -6,12 +6,12 @@ from numba import njit, prange
 class Mode7:
     def __init__(self, app):
         self.app = app
-#        self.floor_tex = pg.image.load('textures/ground_town_lowres.png').convert()
-        self.set_textures('textures/sky_lowres.png', 'textures/ground_grass_lowres.png')
+#        self.floor_tex = pg.image.load('assets/textures/environment/ground_town_lowres.png').convert()
+        self.set_textures('assets/textures/environment/sky_lowres.png', 'assets/textures/environment/ground_grass_lowres.png')
         self.tex_size = self.floor_tex.get_size()
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
 
-#        self.ceil_tex = pg.image.load('textures/ceil_3.png').convert()
+#        self.ceil_tex = pg.image.load('assets/textures/environment/ceil_3.png').convert()
         self.tex_size = self.ceil_tex.get_size()
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
