@@ -56,7 +56,7 @@ class Game:
                     self.explosion_sound.play()
                     enemy.alive = False
 
-        self.enemies = [e for e in self.enemies if e.alive]
+        self.enemies[:] = [e for e in self.enemies if e.alive]
 
         for drop in self.drops:
             drop.update(player_pos)
