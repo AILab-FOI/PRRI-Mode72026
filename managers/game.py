@@ -77,14 +77,21 @@ class Game:
 
 
     def shoot_revolver(self, pos, angle):
-        offset = 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
-        self.projectiles.append(Projectile(pos, angle, speed=0.6, offset_distance=offset))
+        offset = self.get_projectile_offset(pos)
+        spread = random.uniform(-0.025, 0.025)
+        self.projectiles.append(Projectile(pos, angle + spread, speed=0.62, offset_distance=offset))
 
     def shoot_shotgun(self, pos, angle):
-        for spread in [-0.2, 0, 0.2]:
-            offset = 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
-            self.projectiles.append(Projectile(pos, angle + spread, speed=0.5, offset_distance=offset))
+        offset = self.get_projectile_offset(pos)
+        for spread in [-0.24, 0.0, 0.24]:
+            pellet_spread = spread + random.uniform(-0.03, 0.03)
+            pellet_speed = 0.48 + random.uniform(-0.03, 0.04)
+            self.projectiles.append(Projectile(pos, angle + pellet_spread, speed=pellet_speed, offset_distance=offset))
 
     def shoot_minigun(self, pos, angle):
-        offset = 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
-        self.projectiles.append(Projectile(pos, angle, speed=0.5, offset_distance=offset))
+        offset = self.get_projectile_offset(pos)
+        spread = random.uniform(-0.06, 0.06)
+        self.projectiles.append(Projectile(pos, angle + spread, speed=0.54, offset_distance=offset))
+
+    def get_projectile_offset(self, pos):
+        return 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0

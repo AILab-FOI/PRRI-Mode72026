@@ -62,6 +62,16 @@ class Enemy:
             scaled_texture = pg.transform.scale(self.texture, (scale, scale))
             screen.blit(scaled_texture, (int(screen_x) - scale // 2, int(screen_y) - scale // 2))
 
+            if self.hit_timer > 0:
+                flash_width = max(2, scale // 12)
+                pg.draw.circle(
+                    screen,
+                    (255, 226, 128),
+                    (int(screen_x), int(screen_y)),
+                    max(6, scale // 2 + 6),
+                    flash_width,
+                )
+
             hp_bar_width = scale
             hp_bar_rect = pg.Rect(
                 int(screen_x - hp_bar_width / 2),
