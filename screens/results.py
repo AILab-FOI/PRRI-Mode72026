@@ -4,12 +4,12 @@ import time
 class ResultsScreen:
     def __init__(self, screen, time_survived, enemies_killed, waves_survived):
         self.screen = screen
-        self.bg_image = pg.image.load("textures/gameoverBG.png").convert()
+        self.bg_image = pg.image.load("assets/textures/ui/gameoverBG.png").convert()
         self.bg_image = pg.transform.scale(self.bg_image, self.screen.get_size())
         self.time_survived = time_survived
         self.enemies_killed = enemies_killed
         self.waves_survived = waves_survived
-        self.font = pg.font.Font("fonts/steampunk-mainmenu.ttf", 100)
+        self.font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 100)
         self.small_font = pg.font.SysFont("Comic Sans MS", 40)
         self.white = (255, 255, 255)
         self.green = (0, 255, 0)

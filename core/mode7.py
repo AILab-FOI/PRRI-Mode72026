@@ -6,12 +6,12 @@ from numba import njit, prange
 class Mode7:
     def __init__(self, app):
         self.app = app
-#        self.floor_tex = pg.image.load('textures/ground_town_lowres.png').convert()
-        self.set_textures('textures/sky_lowres.png', 'textures/ground_grass_lowres.png')
+#        self.floor_tex = pg.image.load('assets/textures/environment/ground_town_lowres.png').convert()
+        self.set_textures('assets/textures/environment/sky_lowres.png', 'assets/textures/environment/ground_grass_lowres.png')
         self.tex_size = self.floor_tex.get_size()
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
 
-#        self.ceil_tex = pg.image.load('textures/ceil_3.png').convert()
+#        self.ceil_tex = pg.image.load('assets/textures/environment/ceil_3.png').convert()
         self.tex_size = self.ceil_tex.get_size()
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
@@ -19,8 +19,6 @@ class Mode7:
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
         self.alt = 1.0
-        self.angle = 0.0
-        self.pos = np.array([0.0, 0.0])
 
     def set_textures(self, sky_path, ground_path):
         self.floor_tex = pg.image.load(ground_path).convert()
@@ -32,18 +30,26 @@ class Mode7:
 
 
     def update(self):
-        self.movement()
+        keys = pg.key.get_pressed()
+        if keys[pg.K_q]:
+            self.alt += SPEED
+        if keys[pg.K_e]:
+            self.alt -= SPEED
+        self.alt = min(max(self.alt, 0.3), 4.0)
+
+        player = self.app.player
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
-                                              self.tex_size, self.angle, self.pos, self.alt)
+                                              self.tex_size, player.angle, player.pos, self.alt)
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
 
     def project(self, world_pos):
         """Convert world coordinates (x, y) to screen coordinates (screen_x, screen_y) with size scaling"""
-        relative_pos = world_pos - self.pos
-        rotated_x = relative_pos[0] * np.cos(self.angle) - relative_pos[1] * np.sin(self.angle)
-        rotated_y = relative_pos[0] * np.sin(self.angle) + relative_pos[1] * np.cos(self.angle)
+        player = self.app.player
+        relative_pos = world_pos - player.pos
+        rotated_x = relative_pos[0] * np.cos(player.angle) - relative_pos[1] * np.sin(player.angle)
+        rotated_y = relative_pos[0] * np.sin(player.angle) + relative_pos[1] * np.cos(player.angle)
 
         if rotated_y <= 0.1:  # Prevent division by zero and objects disappearing completely
             return -1000, -1000, 0  # Return an off-screen position
@@ -114,40 +120,3 @@ class Mode7:
                 new_alt += alt
 
         return screen_array
-
-    def movement(self):
-        sin_a = np.sin(self.angle)
-        cos_a = np.cos(self.angle)
-        dx, dy = 0, 0
-        player_speed = SPEED * 0.7 * self.app.speed_multiplier
-        speed_sin = player_speed * sin_a
-        speed_cos = player_speed * cos_a
-
-        self.angle %= 2 * np.pi
-
-        keys = pg.key.get_pressed()
-        if keys[pg.K_w]:
-            dy += speed_cos
-            dx += speed_sin
-        if keys[pg.K_s]:
-            dy += -speed_cos
-            dx += -speed_sin
-        if keys[pg.K_a]:
-            dy += speed_sin
-            dx += -speed_cos
-        if keys[pg.K_d]:
-            dy += -speed_sin
-            dx += speed_cos
-        self.pos[0] += dx
-        self.pos[1] += dy
-
-        if keys[pg.K_LEFT]:
-            self.angle -= SPEED
-        if keys[pg.K_RIGHT]:
-            self.angle += SPEED
-
-        if keys[pg.K_q]:
-            self.alt += SPEED
-        if keys[pg.K_e]:
-            self.alt -= SPEED
-        self.alt = min(max(self.alt, 0.3), 4.0)

@@ -1,3 +1,5 @@
+from enum import Enum
+
 # settings
 
 #WIN_RES = WIDTH, HEIGHT = 1280, 720
@@ -10,3 +12,9 @@ SPEED = 0.05
 MENU = 'menu' # *States
 GAME = 'game'
 GAME_OVER = 'game_over'
+
+
+class WeaponType(str, Enum):
+    REVOLVER = "revolver"
+    SHOTGUN = "shotgun"
+    MINIGUN = "minigun"

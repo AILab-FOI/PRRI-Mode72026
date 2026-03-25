@@ -8,9 +8,9 @@ class Menu:
         self.screen = self.app.screen
         self.white = (255, 255, 255)
         self.grey = (220, 210, 180)
-        self.font = pg.font.Font('fonts/steampunk-mainmenu.ttf', 74)
-        self.title_font = pg.font.Font('fonts/steampunk-mainmenu.ttf', 140)
-        self.background = pg.image.load('textures/BG_notext.png').convert()
+        self.font = pg.font.Font('assets/fonts/steampunk-mainmenu.ttf', 74)
+        self.title_font = pg.font.Font('assets/fonts/steampunk-mainmenu.ttf', 140)
+        self.background = pg.image.load('assets/textures/ui/BG_notext.png').convert()
         print("Background loaded.")
 
         button_width, button_height = 300, 60
