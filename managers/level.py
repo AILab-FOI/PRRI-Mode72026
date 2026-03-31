@@ -2,15 +2,19 @@
 import random
 
 from entities.enemies import Enemy, FastEnemy, TankEnemy
+from entities.obstacles import Obstacle, SmallBuilding, LargeBuilding
 
 
 class LevelManager:
-    def __init__(self, mode7, enemies):
+    def __init__(self, mode7, enemies, obstacles):
         self.mode7 = mode7
         self.enemies = enemies
+        self.obstacles = obstacles
 
     def spawn_wave(self, wave_num):
         self.enemies.clear()
+        self.obstacles.clear()
+
         for _ in range(5 + wave_num * 2):
             x, y = random.uniform(-10, 10), random.uniform(-10, 10)
             if wave_num < 5:
@@ -22,6 +26,24 @@ class LevelManager:
             else:
                 enemy = random.choice([Enemy((x, y)), FastEnemy((x, y)), TankEnemy((x, y))])
             self.enemies.append(enemy)
+
+        num_obstacles = min(3 + wave_num, 15) 
+        for _ in range(num_obstacles):
+          
+            ox = random.uniform(-12, 12)
+            oy = random.uniform(-12, 12)
+            
+            while abs(ox) < 2.0 and abs(oy) < 2.0:
+                ox = random.uniform(-12, 12)
+                oy = random.uniform(-12, 12)
+
+           
+            building_type = random.choices(
+                [SmallBuilding, Obstacle, LargeBuilding],
+                weights=[3, 2, 1] if wave_num < 10 else [1, 2, 3],
+                k=1,
+            )[0]
+            self.obstacles.append(building_type((ox, oy),texture_path="assets/textures/environment/ground_halfsnow_lowres.png"))
 
         match wave_num:
             case 3:
