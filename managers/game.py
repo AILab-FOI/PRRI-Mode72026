@@ -5,6 +5,8 @@ from core.projectile import Projectile
 from entities.drops import HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop
 from entities.enemies import FastEnemy
 from managers.level import LevelManager
+from entities.obstacles import Obstacle
+
 
 class Game:
     def __init__(self, mode7, player, app):
@@ -14,8 +16,9 @@ class Game:
         self.projectiles = []
         self.enemies = []
         self.drops = []
+        self.obstacles = []
         self.wave = 1
-        self.level_manager = LevelManager(self.mode7, self.enemies)
+        self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles)
         self.wave_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.explosion_sound = pg.mixer.Sound("assets/music/eksplozija.mp3")
         self.level_manager.spawn_wave(self.wave)
@@ -63,6 +66,10 @@ class Game:
 
         self.drops = [d for d in self.drops if not d.collected]
 
+        for obstacle in self.obstacles:
+            obstacle.update(self.player)
+        self.obstacles[:] = [o for o in self.obstacles if o.alive]
+
         if len(self.enemies) == 0:
             self.wave += 1
             self.level_manager.spawn_wave(self.wave)
@@ -74,6 +81,8 @@ class Game:
             enemy.draw(screen, self.mode7)
         for drop in self.drops:
             drop.draw(screen, self.mode7)
+        for obj in self.obstacles:
+            obj.draw(screen,self.mode7)
 
 
     def shoot_revolver(self, pos, angle):
