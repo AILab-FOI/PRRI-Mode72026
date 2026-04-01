@@ -12,7 +12,7 @@ class Player:
         self.base_speed = SPEED * 0.7
         self.acceleration = 0.22
         self.drag = 0.82
-        self.turn_speed = SPEED * 0.9
+        self.turn_speed = SPEED * 0.6
         self.speed_multiplier = 1.0
         self.speed_timer = 0
         self.health = 30
@@ -67,9 +67,9 @@ class Player:
 
         self.pos += self.velocity
 
-        if keys[pg.K_LEFT]:
+        if keys[pg.K_a]:
             self.angle -= self.turn_speed
-        if keys[pg.K_RIGHT]:
+        if keys[pg.K_d]:
             self.angle += self.turn_speed
 
     def update(self, keys):
