@@ -85,6 +85,7 @@ class App:
         elif self.state == GAME:
             self.mode7.draw()
             self.game.draw(self.screen)
+            self.mode7.draw_player_sprite()
             self.ui_manager.draw_ui()
             self.ui_manager.draw_weapon_ui()
             pg.display.flip()

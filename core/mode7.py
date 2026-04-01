@@ -52,6 +52,27 @@ class Mode7:
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
+    
+    def draw_player_sprite(self):
+        """Draw the player airship sprite as a fixed 3rd-person screen overlay.
+
+        The sprite is anchored at (SPRITE_SCREEN_X, SPRITE_SCREEN_Y) — slightly
+        below the horizon line and horizontally centered.  It does not move with
+        the camera because the camera IS the player; the sprite always faces
+        into the scene (away from the viewer).
+
+        An invulnerability flash is applied when the player has i-frames active.
+        """
+        player = self.app.player
+        sprite  = self.player_sprite
+
+        if player.is_invulnerable() and (pg.time.get_ticks() // 90) % 2 == 0:
+            sprite = sprite.copy()
+            sprite.fill((255, 240, 80, 90), special_flags=pg.BLEND_RGBA_ADD)
+
+        blit_x = SPRITE_SCREEN_X - SPRITE_DISPLAY_SIZE // 2
+        blit_y = SPRITE_SCREEN_Y - SPRITE_DISPLAY_SIZE // 2
+        self.app.screen.blit(sprite, (blit_x, blit_y))
 
     def project(self, world_pos):
         """Convert world coordinates (x, y) to screen coordinates (screen_x, screen_y) with size scaling"""
