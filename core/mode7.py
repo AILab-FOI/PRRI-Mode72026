@@ -53,6 +53,22 @@ class Mode7:
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
     
+    def get_player_sprite_world_pos(self):
+        player = self.app.player
+        angle  = player.angle
+
+        rotated_y = self.alt * 50.0 / SPRITE_PROJ_OFFSET
+
+        rotated_x = (SPRITE_SCREEN_X - WIDTH / 2) * rotated_y / (WIDTH / 4)  # == 0
+
+        cos_a = np.cos(angle)
+        sin_a = np.sin(angle)
+
+        world_dx = rotated_x * cos_a + rotated_y * sin_a
+        world_dy = -rotated_x * sin_a + rotated_y * cos_a
+
+        return player.pos + np.array([world_dx, world_dy])
+    
     def draw_player_sprite(self):
         """Draw the player airship sprite as a fixed 3rd-person screen overlay.
 
