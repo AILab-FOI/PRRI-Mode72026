@@ -51,10 +51,7 @@ class Player:
             move_input[1] += 1
         if keys[pg.K_s]:
             move_input[1] -= 1
-        if keys[pg.K_a]:
-            move_input[0] -= 1
-        if keys[pg.K_d]:
-            move_input[0] += 1
+
 
         input_length = np.linalg.norm(move_input)
         if input_length > 0:

@@ -70,15 +70,6 @@ class Mode7:
         return player.pos + np.array([world_dx, world_dy])
     
     def draw_player_sprite(self):
-        """Draw the player airship sprite as a fixed 3rd-person screen overlay.
-
-        The sprite is anchored at (SPRITE_SCREEN_X, SPRITE_SCREEN_Y) — slightly
-        below the horizon line and horizontally centered.  It does not move with
-        the camera because the camera IS the player; the sprite always faces
-        into the scene (away from the viewer).
-
-        An invulnerability flash is applied when the player has i-frames active.
-        """
         player = self.app.player
         sprite  = self.player_sprite
 
