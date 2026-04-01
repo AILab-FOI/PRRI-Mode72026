@@ -3,6 +3,12 @@ import numpy as np
 from settings import *
 from numba import njit, prange
 
+SPRITE_SCREEN_X = WIDTH // 2
+SPRITE_SCREEN_Y = HALF_HEIGHT + 80
+SPRITE_PROJ_OFFSET = 50.0
+SPRITE_DISPLAY_SIZE = 88
+
+
 class Mode7:
     def __init__(self, app):
         self.app = app
@@ -19,6 +25,9 @@ class Mode7:
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
         self.alt = 1.0
+
+        raw_sprite = pg.image.load('assets/textures/environment/airship_1.png').convert_alpha()
+        self.player_sprite = pg.transform.scale(raw_sprite, (SPRITE_DISPLAY_SIZE, SPRITE_DISPLAY_SIZE))
 
     def set_textures(self, sky_path, ground_path):
         self.floor_tex = pg.image.load(ground_path).convert()
