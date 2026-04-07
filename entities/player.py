@@ -22,6 +22,7 @@ class Player:
         self.invulnerability_duration = 0.75
         self.invulnerable_until = 0
         self.hit_sound = pg.mixer.Sound('assets/music/HP loss.mp3')
+        self.pivot_distance = 5.0
 
     def take_damage(self, amount):
         now = time.time()
