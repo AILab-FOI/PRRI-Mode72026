@@ -47,6 +47,9 @@ class Mode7:
         self.alt = min(max(self.alt, 0.3), 4.0)
 
         player = self.app.player
+        k = SPRITE_SCREEN_Y - HALF_HEIGHT
+        player.pivot_distance = (SPRITE_SCREEN_Y + FOCAL_LEN) / (k + (k + 1) * self.alt)
+
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
                                               self.tex_size, player.angle, player.pos, self.alt)
 
