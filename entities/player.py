@@ -68,10 +68,13 @@ class Player:
 
         self.pos += self.velocity
 
-        if keys[pg.K_a]:
-            self.angle -= self.turn_speed
-        if keys[pg.K_d]:
-            self.angle += self.turn_speed
+        if keys[pg.K_a] or keys[pg.K_d]:
+            zeppelin = self.pos + self.pivot_distance * np.array([sin_a, cos_a])
+            if keys[pg.K_a]:
+                self.angle -= self.turn_speed
+            if keys[pg.K_d]:
+                self.angle += self.turn_speed
+            self.pos = zeppelin - self.pivot_distance * np.array([np.sin(self.angle), np.cos(self.angle)])
 
     def update(self, keys):
         self.movement(keys)
