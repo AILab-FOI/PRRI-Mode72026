@@ -50,6 +50,8 @@ class Game:
         for enemy in self.enemies:
             enemy.update(player_pos)
             for bullet in enemy.bullets:
+                if abs(bullet.alt - self.mode7.alt) > 0.5:
+                    continue
                 if np.linalg.norm(np.array(player_pos) - bullet.pos) < self.player.hit_radius + bullet.hit_radius:
                     self.player.take_damage(enemy.damage)
                     bullet.active = False

@@ -90,6 +90,8 @@ class Enemy:
             bullet.draw(screen, mode7)
 
     def check_collision(self, projectile):
+        if abs(projectile.alt - self.alt) > 0.5:
+            return False
         if np.linalg.norm(self.pos - projectile.pos) < self.hit_radius + projectile.hit_radius:
             self.hit_timer = 10
             self.hp -= 50
