@@ -21,6 +21,7 @@ class Enemy:
         self.hit_radius = 0.55
         self.contact_radius = 0.42
         self.bullet_hit_radius = 0.18
+        self.alt = 1.0
 
     def update(self, player_pos):
         direction = player_pos - self.pos
@@ -52,7 +53,7 @@ class Enemy:
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius, alt=self.alt)
         self.bullets.append(bullet)
 
     def draw(self, screen, mode7):
@@ -114,7 +115,7 @@ class TankEnemy(Enemy):
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius, alt=self.alt)
         self.bullets.append(bullet)
 
 class FastEnemy(Enemy):
