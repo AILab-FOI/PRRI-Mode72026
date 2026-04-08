@@ -3,7 +3,7 @@ import pygame as pg
 
 class AudioManager:
     def __init__(self):
-        self.powerup_sound = pg.mixer.Sound("assets/music/Timer.mp3")
+        self.powerup_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.revolver_sound = pg.mixer.Sound("assets/music/Revolver.mp3")
         self.shotgun_sound = pg.mixer.Sound("assets/music/shotgun sound effect.mp3")
         self.minigun_sound = pg.mixer.Sound("assets/music/Minigun zvucni efekt.mp3")
