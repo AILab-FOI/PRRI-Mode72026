@@ -6,7 +6,7 @@ from settings import SPEED
 
 class Player:
     def __init__(self):
-        self.pos = np.array([0.0, 0.0])
+        self.world_pos = np.array([0.0, 0.0], dtype=np.float32)
         self.velocity = np.zeros(2, dtype=np.float32)
         self.angle = 0.0
         self.base_speed = SPEED * 0.7
@@ -22,7 +22,14 @@ class Player:
         self.invulnerability_duration = 0.75
         self.invulnerable_until = 0
         self.hit_sound = pg.mixer.Sound('assets/music/HP loss.mp3')
-        self.pivot_distance = 5.0
+
+    @property
+    def pos(self):
+        return self.world_pos
+
+    @pos.setter
+    def pos(self, value):
+        self.world_pos = np.array(value, dtype=np.float32)
 
     def take_damage(self, amount):
         now = time.time()
@@ -42,39 +49,27 @@ class Player:
         return time.time() < self.invulnerable_until
 
     def movement(self, keys):
-        sin_a = np.sin(self.angle)
-        cos_a = np.cos(self.angle)
-        move_input = np.zeros(2, dtype=np.float32)
+        turn_input = 0
+        if keys[pg.K_a]:
+            turn_input -= 1
+        if keys[pg.K_d]:
+            turn_input += 1
+        self.angle = (self.angle + turn_input * self.turn_speed) % (2 * np.pi)
 
-        self.angle %= 2 * np.pi
-
+        move_input = 0.0
         if keys[pg.K_w]:
-            move_input[1] += 1
+            move_input += 1.0
         if keys[pg.K_s]:
-            move_input[1] -= 1
+            move_input -= 1.0
 
-
-        input_length = np.linalg.norm(move_input)
-        if input_length > 0:
-            move_input /= input_length
-            forward = np.array([sin_a, cos_a], dtype=np.float32)
-            right = np.array([cos_a, -sin_a], dtype=np.float32)
-            desired_velocity = (
-                forward * move_input[1] + right * move_input[0]
-            ) * self.base_speed * self.speed_multiplier
+        if move_input != 0.0:
+            forward = np.array([np.sin(self.angle), np.cos(self.angle)], dtype=np.float32)
+            desired_velocity = forward * move_input * self.base_speed * self.speed_multiplier
             self.velocity += (desired_velocity - self.velocity) * self.acceleration
         else:
             self.velocity *= self.drag
 
-        self.pos += self.velocity
-
-        if keys[pg.K_a] or keys[pg.K_d]:
-            zeppelin = self.pos + self.pivot_distance * np.array([sin_a, cos_a])
-            if keys[pg.K_a]:
-                self.angle -= self.turn_speed
-            if keys[pg.K_d]:
-                self.angle += self.turn_speed
-            self.pos = zeppelin - self.pivot_distance * np.array([np.sin(self.angle), np.cos(self.angle)])
+        self.world_pos += self.velocity
 
     def update(self, keys):
         self.movement(keys)

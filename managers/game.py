@@ -50,8 +50,6 @@ class Game:
         for enemy in self.enemies:
             enemy.update(player_pos)
             for bullet in enemy.bullets:
-                if abs(bullet.alt - self.mode7.alt) > 0.5:
-                    continue
                 if np.linalg.norm(np.array(player_pos) - bullet.pos) < self.player.hit_radius + bullet.hit_radius:
                     self.player.take_damage(enemy.damage)
                     bullet.active = False
@@ -87,22 +85,29 @@ class Game:
             obj.draw(screen,self.mode7)
 
 
-    def shoot_revolver(self, pos, angle):
-        offset = self.get_projectile_offset(pos)
+    def shoot_revolver(self, angle):
+        pos = self.get_player_projectile_spawn_pos()
         spread = random.uniform(-0.025, 0.025)
-        self.projectiles.append(Projectile(pos, angle + spread, speed=0.62, offset_distance=offset, alt=self.mode7.alt))
+        self.projectiles.append(Projectile(pos, angle + spread, speed=0.62, offset_distance=0.0))
 
-    def shoot_shotgun(self, pos, angle):
-        offset = self.get_projectile_offset(pos)
+    def shoot_shotgun(self, angle):
+        pos = self.get_player_projectile_spawn_pos()
         for spread in [-0.24, 0.0, 0.24]:
             pellet_spread = spread + random.uniform(-0.03, 0.03)
             pellet_speed = 0.48 + random.uniform(-0.03, 0.04)
-            self.projectiles.append(Projectile(pos, angle + pellet_spread, speed=pellet_speed, offset_distance=offset, alt=self.mode7.alt))
+            self.projectiles.append(Projectile(pos, angle + pellet_spread, speed=pellet_speed, offset_distance=0.0))
 
-    def shoot_minigun(self, pos, angle):
-        offset = self.get_projectile_offset(pos)
+    def shoot_minigun(self, angle):
+        pos = self.get_player_projectile_spawn_pos()
         spread = random.uniform(-0.06, 0.06)
-        self.projectiles.append(Projectile(pos, angle + spread, speed=0.54, offset_distance=offset, alt=self.mode7.alt))
+        self.projectiles.append(Projectile(pos, angle + spread, speed=0.54, offset_distance=0.0))
+
+    def get_player_projectile_spawn_pos(self):
+        # The zeppelin sprite is a fixed HUD overlay, so gameplay projectiles
+        # must spawn from a stable world-space muzzle instead of camera altitude.
+        forward_offset = self.get_projectile_offset(self.player.world_pos)
+        forward = np.array([np.sin(self.player.angle), np.cos(self.player.angle)], dtype=np.float32)
+        return self.player.world_pos + forward * forward_offset
 
     def get_projectile_offset(self, pos):
         return 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0

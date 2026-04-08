@@ -5,8 +5,8 @@ from numba import njit, prange
 
 SPRITE_SCREEN_X = WIDTH // 2
 SPRITE_SCREEN_Y = HALF_HEIGHT + 80
-SPRITE_PROJ_OFFSET = 50.0
 SPRITE_DISPLAY_SIZE = 88
+PROJECTION_Y_SCALE = 50.0
 
 
 class Mode7:
@@ -25,6 +25,8 @@ class Mode7:
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
         self.alt = 1.0
+        self.camera_pos = np.zeros(2, dtype=np.float32)
+        self.camera_angle = 0.0
 
         raw_sprite = pg.image.load('assets/textures/environment/airship_1.png').convert_alpha()
         self.player_sprite = pg.transform.scale(raw_sprite, (SPRITE_DISPLAY_SIZE, SPRITE_DISPLAY_SIZE))
@@ -37,6 +39,11 @@ class Mode7:
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
 
+    def sync_camera_to_player(self):
+        player = self.app.player
+        self.camera_pos = player.world_pos.copy()
+        self.camera_angle = player.angle
+
 
     def update(self):
         keys = pg.key.get_pressed()
@@ -46,31 +53,13 @@ class Mode7:
             self.alt -= SPEED
         self.alt = min(max(self.alt, 0.3), 4.0)
 
-        player = self.app.player
-        k = SPRITE_SCREEN_Y - HALF_HEIGHT
-        player.pivot_distance = (SPRITE_SCREEN_Y + FOCAL_LEN) / (k + (k + 1) * self.alt)
+        self.sync_camera_to_player()
 
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
-                                              self.tex_size, player.angle, player.pos, self.alt)
+                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt)
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
-    
-    def get_player_sprite_world_pos(self):
-        player = self.app.player
-        angle  = player.angle
-
-        rotated_y = self.alt * 50.0 / SPRITE_PROJ_OFFSET
-
-        rotated_x = (SPRITE_SCREEN_X - WIDTH / 2) * rotated_y / (WIDTH / 4)  # == 0
-
-        cos_a = np.cos(angle)
-        sin_a = np.sin(angle)
-
-        world_dx = rotated_x * cos_a + rotated_y * sin_a
-        world_dy = -rotated_x * sin_a + rotated_y * cos_a
-
-        return player.pos + np.array([world_dx, world_dy])
     
     def draw_player_sprite(self):
         player = self.app.player
@@ -86,16 +75,15 @@ class Mode7:
 
     def project(self, world_pos):
         """Convert world coordinates (x, y) to screen coordinates (screen_x, screen_y) with size scaling"""
-        player = self.app.player
-        relative_pos = world_pos - player.pos
-        rotated_x = relative_pos[0] * np.cos(player.angle) - relative_pos[1] * np.sin(player.angle)
-        rotated_y = relative_pos[0] * np.sin(player.angle) + relative_pos[1] * np.cos(player.angle)
+        relative_pos = world_pos - self.camera_pos
+        rotated_x = relative_pos[0] * np.cos(self.camera_angle) - relative_pos[1] * np.sin(self.camera_angle)
+        rotated_y = relative_pos[0] * np.sin(self.camera_angle) + relative_pos[1] * np.cos(self.camera_angle)
 
         if rotated_y <= 0.1:  # Prevent division by zero and objects disappearing completely
             return -1000, -1000, 0  # Return an off-screen position
 
-        screen_x = int(WIDTH / 2 + rotated_x / rotated_y * WIDTH / 4)
-        screen_y = int(HEIGHT / 2 - self.alt * 50 / rotated_y)
+        screen_x = int(HALF_WIDTH + rotated_x / rotated_y * WIDTH / 4)
+        screen_y = int(HALF_HEIGHT - self.alt * PROJECTION_Y_SCALE / rotated_y)
 
         # Scale size based on distance (closer = bigger)
         scale = max(5, int(100 / rotated_y))  # Prevent scale from going too small

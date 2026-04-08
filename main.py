@@ -65,7 +65,7 @@ class App:
                 )
                 return
             self.player.update(pg.key.get_pressed())
-            player_pos = self.player.pos
+            player_pos = self.player.world_pos
             self.mode7.update()
             self.game.update(player_pos)
             if self.weapon == WeaponType.MINIGUN and self.shooting:
@@ -137,18 +137,16 @@ class App:
     def try_fire_weapon(self):
         if not self.can_fire_weapon():
             return False
-        
-        spawn_pos = self.mode7.get_player_sprite_world_pos()
 
         if self.weapon == WeaponType.REVOLVER:
             self.audio.play_revolver()
-            self.game.shoot_revolver(spawn_pos, self.player.angle)
+            self.game.shoot_revolver(self.player.angle)
         elif self.weapon == WeaponType.SHOTGUN:
             self.audio.play_shotgun()
-            self.game.shoot_shotgun(spawn_pos, self.player.angle)
+            self.game.shoot_shotgun(self.player.angle)
         elif self.weapon == WeaponType.MINIGUN:
             self.audio.play_minigun()
-            self.game.shoot_minigun(spawn_pos, self.player.angle)
+            self.game.shoot_minigun(self.player.angle)
 
         now = time.time()
         self.last_shot_time = now

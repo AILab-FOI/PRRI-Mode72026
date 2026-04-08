@@ -21,7 +21,6 @@ class Enemy:
         self.hit_radius = 0.55
         self.contact_radius = 0.42
         self.bullet_hit_radius = 0.18
-        self.alt = 1.0
 
     def update(self, player_pos):
         direction = player_pos - self.pos
@@ -53,7 +52,7 @@ class Enemy:
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius, alt=self.alt)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius)
         self.bullets.append(bullet)
 
     def draw(self, screen, mode7):
@@ -90,8 +89,6 @@ class Enemy:
             bullet.draw(screen, mode7)
 
     def check_collision(self, projectile):
-        if abs(projectile.alt - self.alt) > 0.5:
-            return False
         if np.linalg.norm(self.pos - projectile.pos) < self.hit_radius + projectile.hit_radius:
             self.hit_timer = 10
             self.hp -= 50
@@ -117,7 +114,7 @@ class TankEnemy(Enemy):
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius, alt=self.alt)
+        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius)
         self.bullets.append(bullet)
 
 class FastEnemy(Enemy):

@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Projectile:
-    def __init__(self, player_pos, player_angle, speed=0.5, max_distance=20, offset_distance=2.0, hit_radius=0.18, alt=1.0):
+    def __init__(self, player_pos, player_angle, speed=0.5, max_distance=20, offset_distance=2.0, hit_radius=0.18):
         if np.isscalar(player_angle):
             player_angle = np.radians(player_angle) if player_angle > np.pi * 2 else player_angle
 
@@ -22,7 +22,6 @@ class Projectile:
             self.color = (0, 0, 0)
             self.radius_divisor = 15
             self.hit_radius = hit_radius
-            self.alt = alt
         else:
             self.pos = np.array(player_pos, dtype=np.float32)
             self.direction = np.array(player_angle, dtype=np.float32)
@@ -33,7 +32,6 @@ class Projectile:
             self.color = (255, 0, 0)
             self.radius_divisor = 20
             self.hit_radius = hit_radius
-            self.alt = alt
 
     def update(self):
         self.pos += self.direction * self.speed

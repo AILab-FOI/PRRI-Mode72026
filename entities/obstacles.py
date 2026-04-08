@@ -30,7 +30,7 @@ class Obstacle:
         if not self.alive:
             return
 
-        distance = np.linalg.norm(self.pos - player.pos)
+        distance = np.linalg.norm(self.pos - player.world_pos)
         if distance < self.collision_radius:
             player.take_damage(self.damage)
             self.alive = False
