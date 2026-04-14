@@ -26,7 +26,7 @@ class Mode7:
 
         self.map_mode = 0
         self.map_world_size = 24.0
-        self.alt = 1.0
+        self.alt = 4.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
@@ -60,10 +60,10 @@ class Mode7:
     def update(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_q]:
-            self.alt += SPEED
+            self.alt -= SPEED * 1.2
         if keys[pg.K_e]:
-            self.alt -= SPEED
-        self.alt = min(max(self.alt, 0.3), 4.0)
+            self.alt += SPEED * 1.2
+        self.alt = min(max(self.alt, 0.1), 6.0)
 
         self.sync_camera_to_player()
 
