@@ -25,6 +25,7 @@ class Mode7:
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
         self.map_mode = 0
+        self.map_world_size = 24.0
         self.alt = 1.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
@@ -67,7 +68,8 @@ class Mode7:
         self.sync_camera_to_player()
 
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
-                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt)
+                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt,
+                                              self.map_mode, self.map_world_size)
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
@@ -103,7 +105,8 @@ class Mode7:
 
     @staticmethod
     @njit(fastmath=True, parallel=True)
-    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt):
+    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt,
+                     map_mode, map_world_size):
 
         sin, cos = np.sin(angle), np.cos(angle)
 
@@ -124,13 +127,20 @@ class Mode7:
                 floor_y = py / z + player_pos[1]
 
                 # floor pos and color
-                floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
+                if map_mode == 1:
+                    # single map image — linear mapping, no tiling
+                    u = int((floor_x / map_world_size + 0.5) * tex_size[0])
+                    v = int((floor_y / map_world_size + 0.5) * tex_size[1])
+                    u = min(max(u, 0), tex_size[0] - 1)
+                    v = min(max(v, 0), tex_size[1] - 1)
+                    floor_pos = u, v
+                else:
+                    floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
                 floor_col = floor_array[floor_pos]
 
                 # ceil projection and transformation
                 ceil_x = alt * px / z - player_pos[0] * 0.3
                 ceil_y = alt * py / z + player_pos[1] * 0.3
-
 
                 # ceil pos and color
                 ceil_u = int(np.abs(ceil_x * SCALE) % tex_size[0])
@@ -139,7 +149,6 @@ class Mode7:
                 ceil_col = ceil_array[ceil_pos]
 
                 # shading
-                # depth = 4 * abs(z) / HALF_HEIGHT
                 depth = min(max(2.5 * (abs(z) / HALF_HEIGHT), 0), 1)
                 fog = (1 - depth) * 230
 
