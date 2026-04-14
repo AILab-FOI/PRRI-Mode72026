@@ -127,14 +127,15 @@ class Mode7:
                 floor_y = py / z + player_pos[1]
 
                 # floor pos and color
+                floor_col = floor_array[0, 0]
                 if map_mode == 1:
                     # single map image — linear mapping, no tiling
                     u = int((floor_x / map_world_size + 0.5) * tex_size[0])
                     v = int((floor_y / map_world_size + 0.5) * tex_size[1])
-                    if u < 0 or u >= tex_size[0] or v < 0 or v >= tex_size[1]:
-                        floor_col = floor_array[0, 0] * 0.0
-                    else:
+                    if 0 <= u < tex_size[0] and 0 <= v < tex_size[1]:
                         floor_col = floor_array[u, v]
+                    else:
+                        floor_col = floor_array[0, 0] - floor_array[0, 0]
                 else:
                     floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
                     floor_col = floor_array[floor_pos]
