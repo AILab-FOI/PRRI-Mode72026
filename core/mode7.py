@@ -24,6 +24,7 @@ class Mode7:
 
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
+        self.map_mode = 0
         self.alt = 1.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
@@ -38,6 +39,16 @@ class Mode7:
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 0
+
+    def set_map(self, map_path, sky_path='assets/textures/environment/sky_lowres.png'):
+        self.floor_tex = pg.image.load(map_path).convert()
+        self.ceil_tex = pg.image.load(sky_path).convert()
+        self.tex_size = self.floor_tex.get_size()
+        self.floor_array = pg.surfarray.array3d(self.floor_tex)
+        self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
+        self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 1
 
     def sync_camera_to_player(self):
         player = self.app.player
