@@ -132,7 +132,7 @@ class Mode7:
                     u = int((floor_x / map_world_size + 0.5) * tex_size[0])
                     v = int((floor_y / map_world_size + 0.5) * tex_size[1])
                     if u < 0 or u >= tex_size[0] or v < 0 or v >= tex_size[1]:
-                        floor_col = (0.0, 0.0, 0.0)
+                        floor_col = floor_array[0, 0] * 0.0
                     else:
                         floor_col = floor_array[u, v]
                 else:
