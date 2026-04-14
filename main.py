@@ -50,12 +50,15 @@ class App:
             self.menu.update()
         # Reset weapon after timer
         if self.weapon != WeaponType.REVOLVER and self.weapon_timer > 0 and time.time() > self.weapon_timer:
+            if self.weapon == WeaponType.MINIGUN:
+                self.audio.play_minigun_reload()
             self.weapon = WeaponType.REVOLVER
             self.weapon_timer = 0
             print("[TIMER] Power-up expired")
         elif self.state == GAME:
             if self.player.is_dead():
                 self.audio.stop_powerup()
+                self.audio.stop_move_sound()
                 self.state = GAME_OVER
                 self.results_screen = ResultsScreen(
                     self.screen,
@@ -64,7 +67,12 @@ class App:
                     self.game.wave
                 )
                 return
-            self.player.update(pg.key.get_pressed())
+            keys = pg.key.get_pressed()
+            self.player.update(keys)
+            if keys[pg.K_w] or keys[pg.K_s]:
+                self.audio.start_move_sound()
+            else:
+                self.audio.stop_move_sound()
             player_pos = self.player.world_pos
             self.mode7.update()
             self.game.update(player_pos)
@@ -141,9 +149,11 @@ class App:
         if self.weapon == WeaponType.REVOLVER:
             self.audio.play_revolver()
             self.game.shoot_revolver(self.player.angle)
+            self.audio.play_revolver_reload()
         elif self.weapon == WeaponType.SHOTGUN:
             self.audio.play_shotgun()
             self.game.shoot_shotgun(self.player.angle)
+            self.audio.play_shotgun_reload()
         elif self.weapon == WeaponType.MINIGUN:
             self.audio.play_minigun()
             self.game.shoot_minigun(self.player.angle)

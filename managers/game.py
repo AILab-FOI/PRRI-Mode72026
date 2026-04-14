@@ -36,6 +36,7 @@ class Game:
                 if enemy.check_collision(proj):
                     proj.active = False
                     if not enemy.alive:
+                        self.app.audio.play_enemy_dead()
                         self.app.enemies_killed += 1
                         if random.random() < 0.3:
                             drop_type = random.choice([HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop])
