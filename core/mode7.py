@@ -131,12 +131,13 @@ class Mode7:
                     # single map image — linear mapping, no tiling
                     u = int((floor_x / map_world_size + 0.5) * tex_size[0])
                     v = int((floor_y / map_world_size + 0.5) * tex_size[1])
-                    u = min(max(u, 0), tex_size[0] - 1)
-                    v = min(max(v, 0), tex_size[1] - 1)
-                    floor_pos = u, v
+                    if u < 0 or u >= tex_size[0] or v < 0 or v >= tex_size[1]:
+                        floor_col = (0.0, 0.0, 0.0)
+                    else:
+                        floor_col = floor_array[u, v]
                 else:
                     floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
-                floor_col = floor_array[floor_pos]
+                    floor_col = floor_array[floor_pos]
 
                 # ceil projection and transformation
                 ceil_x = alt * px / z - player_pos[0] * 0.3
