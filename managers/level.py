@@ -15,6 +15,13 @@ class LevelManager:
         self.enemies.clear()
         self.obstacles.clear()
 
+        if wave_num < 10:
+            self.mode7.set_map('assets/textures/environment/map1.png')
+        elif wave_num < 20:
+            self.mode7.set_map('assets/textures/environment/map2.png')
+        else:
+            self.mode7.set_map('assets/textures/environment/map3.png')
+
         for _ in range(5 + wave_num * 2):
             x, y = random.uniform(-10, 10), random.uniform(-10, 10)
             if wave_num < 5:

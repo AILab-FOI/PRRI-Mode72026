@@ -9,6 +9,7 @@ HALF_WIDTH, HALF_HEIGHT = WIDTH // 2, HEIGHT // 2
 FOCAL_LEN = 250
 SCALE = 100
 SPEED = 0.05
+MAP_BOUND = 10.0
 MENU = 'menu' # *States
 GAME = 'game'
 GAME_OVER = 'game_over'

@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import time
 
-from settings import SPEED
+from settings import SPEED, MAP_BOUND
 
 class Player:
     def __init__(self):
@@ -70,6 +70,7 @@ class Player:
             self.velocity *= self.drag
 
         self.world_pos += self.velocity
+        self.world_pos = np.clip(self.world_pos, -MAP_BOUND, MAP_BOUND)
 
     def update(self, keys):
         self.movement(keys)

@@ -24,7 +24,9 @@ class Mode7:
 
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
-        self.alt = 1.0
+        self.map_mode = 0
+        self.map_world_size = 24.0
+        self.alt = 4.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
@@ -38,6 +40,16 @@ class Mode7:
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 0
+
+    def set_map(self, map_path, sky_path='assets/textures/environment/sky_lowres.png'):
+        self.floor_tex = pg.image.load(map_path).convert()
+        self.ceil_tex = pg.image.load(sky_path).convert()
+        self.tex_size = self.floor_tex.get_size()
+        self.floor_array = pg.surfarray.array3d(self.floor_tex)
+        self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
+        self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 1
 
     def sync_camera_to_player(self):
         player = self.app.player
@@ -48,15 +60,16 @@ class Mode7:
     def update(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_q]:
-            self.alt += SPEED
+            self.alt -= SPEED * 1.2
         if keys[pg.K_e]:
-            self.alt -= SPEED
-        self.alt = min(max(self.alt, 0.3), 4.0)
+            self.alt += SPEED * 1.2
+        self.alt = min(max(self.alt, 0.1), 6.0)
 
         self.sync_camera_to_player()
 
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
-                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt)
+                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt,
+                                              self.map_mode, self.map_world_size)
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
@@ -92,7 +105,8 @@ class Mode7:
 
     @staticmethod
     @njit(fastmath=True, parallel=True)
-    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt):
+    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt,
+                     map_mode, map_world_size):
 
         sin, cos = np.sin(angle), np.cos(angle)
 
@@ -113,13 +127,22 @@ class Mode7:
                 floor_y = py / z + player_pos[1]
 
                 # floor pos and color
-                floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
-                floor_col = floor_array[floor_pos]
+                floor_col = floor_array[0, 0]
+                if map_mode == 1:
+                    # single map image — linear mapping, no tiling
+                    u = int((floor_x / map_world_size + 0.5) * tex_size[0])
+                    v = int((floor_y / map_world_size + 0.5) * tex_size[1])
+                    if 0 <= u < tex_size[0] and 0 <= v < tex_size[1]:
+                        floor_col = floor_array[u, v]
+                    else:
+                        floor_col = floor_array[0, 0] - floor_array[0, 0]
+                else:
+                    floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
+                    floor_col = floor_array[floor_pos]
 
                 # ceil projection and transformation
                 ceil_x = alt * px / z - player_pos[0] * 0.3
                 ceil_y = alt * py / z + player_pos[1] * 0.3
-
 
                 # ceil pos and color
                 ceil_u = int(np.abs(ceil_x * SCALE) % tex_size[0])
@@ -128,7 +151,6 @@ class Mode7:
                 ceil_col = ceil_array[ceil_pos]
 
                 # shading
-                # depth = 4 * abs(z) / HALF_HEIGHT
                 depth = min(max(2.5 * (abs(z) / HALF_HEIGHT), 0), 1)
                 fog = (1 - depth) * 230
 
