@@ -123,6 +123,22 @@ class Enemy:
         )
         self.bullets.append(bullet)
 
+    def _draw_height_indicator(self, screen, screen_x, screen_y, scale, player_height):
+        threshold = self.height_hit_radius + PROJECTILE_HEIGHT_HIT_RADIUS
+        diff = self.height - player_height
+        cx = int(screen_x)
+        cy = int(screen_y - scale // 2 - 22)
+        r = max(5, scale // 10)
+
+        if abs(diff) < threshold:
+            pg.draw.circle(screen, (0, 210, 0), (cx, cy), r)
+        elif diff > 0:
+            pts = [(cx, cy - r), (cx - r, cy + r), (cx + r, cy + r)]
+            pg.draw.polygon(screen, (220, 40, 40), pts)
+        else:
+            pts = [(cx, cy + r), (cx - r, cy - r), (cx + r, cy - r)]
+            pg.draw.polygon(screen, (60, 140, 255), pts)
+
     def draw(self, screen, mode7):
         screen_x, screen_y, scale = mode7.project(self.pos, world_height=self.height)
 
@@ -152,6 +168,8 @@ class Enemy:
             green_bar_width = int(hp_bar_rect.width * hp_ratio)
             green_rect = pg.Rect(hp_bar_rect.x, hp_bar_rect.y, green_bar_width, hp_bar_rect.height)
             pg.draw.rect(screen, (0, 255, 0), green_rect)
+
+            self._draw_height_indicator(screen, screen_x, screen_y, scale, mode7.alt)
 
         for bullet in self.bullets:
             bullet.draw(screen, mode7)
