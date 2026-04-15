@@ -26,7 +26,8 @@ class Mode7:
 
         self.map_mode = 0
         self.map_world_size = 24.0
-        self.alt = 1.0
+        self.alt = AIR_LANE_REFERENCE_HEIGHT
+        self.reference_flight_height = AIR_LANE_REFERENCE_HEIGHT
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
@@ -79,7 +80,7 @@ class Mode7:
             self.alt -= SPEED * 1.2
         if keys[pg.K_e]:
             self.alt += SPEED * 1.2
-        self.alt = min(max(self.alt, 0.1), 6.0)
+        self.alt = min(max(self.alt, PLAYER_MIN_ALTITUDE), PLAYER_MAX_ALTITUDE)
 
         self.sync_camera_to_player()
 
@@ -102,8 +103,8 @@ class Mode7:
         blit_y = SPRITE_SCREEN_Y - SPRITE_DISPLAY_SIZE // 2
         self.app.screen.blit(sprite, (blit_x, blit_y))
 
-    def project(self, world_pos):
-        """Convert world coordinates (x, y) to screen coordinates (screen_x, screen_y) with size scaling"""
+    def project(self, world_pos, world_height=None):
+        """Convert world coordinates (x, y) to screen coordinates with optional air-lane height."""
         relative_pos = world_pos - self.camera_pos
         rotated_x = relative_pos[0] * np.cos(self.camera_angle) - relative_pos[1] * np.sin(self.camera_angle)
         rotated_y = relative_pos[0] * np.sin(self.camera_angle) + relative_pos[1] * np.cos(self.camera_angle)
@@ -112,7 +113,8 @@ class Mode7:
             return -1000, -1000, 0  # Return an off-screen position
 
         screen_x = int(HALF_WIDTH + rotated_x / rotated_y * WIDTH / 4)
-        screen_y = int(HALF_HEIGHT - self.alt * PROJECTION_Y_SCALE / rotated_y)
+        h = world_height if world_height is not None else 0.0
+        screen_y = int(HALF_HEIGHT + (self.alt - h) * PROJECTION_Y_SCALE / rotated_y)
 
         # Scale size based on distance (closer = bigger)
         scale = max(5, int(100 / rotated_y))  # Prevent scale from going too small
