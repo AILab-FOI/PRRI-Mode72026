@@ -26,7 +26,7 @@ class Mode7:
 
         self.map_mode = 0
         self.map_world_size = 24.0
-        self.alt = 4.0
+        self.alt = 1.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
