@@ -266,32 +266,40 @@ class PlayerMechanicsTests(unittest.TestCase):
         self.assertFalse(enemy.check_collision(projectile))
 
     def test_enemy_can_climb_above_cruise_height_to_match_player(self):
+        from settings import ENEMY_HEIGHT_ADJUST_SPEED
         with patch("pygame.image.load", return_value=ImageStub()):
             enemy = Enemy((0.0, 0.0), height=1.0)
 
+        # After 10 frames enemy should have started climbing but still be close to start
         for _ in range(10):
             enemy.update(np.array([0.0, 2.0], dtype=np.float32), player_height=6.0)
 
         self.assertGreater(enemy.height, 1.0)
-        self.assertLess(enemy.height, 2.0)
+        self.assertLess(enemy.height, 1.0 + 10 * ENEMY_HEIGHT_ADJUST_SPEED + 0.01)
 
-        for _ in range(100):
+        # After enough frames to fully converge, enemy should be near player height
+        frames_to_converge = int((6.0 - 1.0) / ENEMY_HEIGHT_ADJUST_SPEED) + 10
+        for _ in range(frames_to_converge):
             enemy.update(np.array([0.0, 2.0], dtype=np.float32), player_height=6.0)
 
         self.assertGreater(enemy.height, 5.5)
 
     def test_enemy_descends_toward_player_until_min_height_floor(self):
+        from settings import ENEMY_HEIGHT_ADJUST_SPEED
         with patch("pygame.image.load", return_value=ImageStub()):
             enemy = Enemy((0.0, 0.0), height=1.0)
 
-        for _ in range(9):
+        # A few frames: enemy should have started descending but not reached floor
+        partial_frames = max(3, int(0.05 / ENEMY_HEIGHT_ADJUST_SPEED))
+        for _ in range(partial_frames):
             enemy.update(np.array([0.0, 2.0], dtype=np.float32), player_height=0.1)
 
-        # After partial descent: moved but hasn't clamped to floor yet
         self.assertLess(enemy.height, 1.0)
         self.assertGreater(enemy.height, enemy.min_height)
 
-        for _ in range(100):
+        # Enough frames to descend 0.5 units — enemy must be well below starting height
+        descent_frames = int(0.5 / ENEMY_HEIGHT_ADJUST_SPEED)
+        for _ in range(descent_frames):
             enemy.update(np.array([0.0, 2.0], dtype=np.float32), player_height=0.1)
 
         self.assertLess(enemy.height, 0.5)
@@ -388,14 +396,25 @@ class PlayerMechanicsTests(unittest.TestCase):
 
         self.assertTrue(enemy.check_collision(projectile))
 
-    def test_enemy_from_far_spawn_still_matches_initial_player_height(self):
+    def test_enemy_within_match_radius_tracks_player_height(self):
+        """Enemy closer than ENEMY_HEIGHT_MATCH_RADIUS should gradually climb toward player height."""
         with patch("pygame.image.load", return_value=ImageStub()):
-            enemy = Enemy((10.0, 10.0), height=0.35)
+            enemy = Enemy((0.0, 4.0), height=0.35)  # distance=4.0 < ENEMY_HEIGHT_MATCH_RADIUS=6.0
 
         for _ in range(20):
             enemy.update(np.array([0.0, 0.0], dtype=np.float32), player_height=AIR_LANE_REFERENCE_HEIGHT)
 
         self.assertGreater(enemy.height, 0.35)
+
+    def test_enemy_outside_match_radius_stays_at_cruise_height(self):
+        """Enemy beyond ENEMY_HEIGHT_MATCH_RADIUS must not track player height changes."""
+        with patch("pygame.image.load", return_value=ImageStub()):
+            enemy = Enemy((10.0, 10.0), height=0.35)  # distance ~14.14 > ENEMY_HEIGHT_MATCH_RADIUS=6.0
+
+        for _ in range(20):
+            enemy.update(np.array([0.0, 0.0], dtype=np.float32), player_height=AIR_LANE_REFERENCE_HEIGHT)
+
+        self.assertAlmostEqual(enemy.height, 0.35, delta=0.01)
 
     def test_player_projectile_height_is_fixed_at_fire_time(self):
         game, _player = self.make_game(player_angle=0.0)
