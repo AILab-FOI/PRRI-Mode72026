@@ -13,7 +13,7 @@ class Mode7:
     def __init__(self, app):
         self.app = app
 #        self.floor_tex = pg.image.load('assets/textures/environment/ground_town_lowres.png').convert()
-        self.set_textures('assets/textures/environment/sky_lowres.png', 'assets/textures/environment/ground_grass_lowres.png')
+        self.set_map('assets/textures/environment/map1.png', 'assets/textures/environment/sky_cloudyday_lowres.png')
         self.tex_size = self.floor_tex.get_size()
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
 
@@ -26,7 +26,7 @@ class Mode7:
 
         self.map_mode = 0
         self.map_world_size = 24.0
-        self.alt = 4.0
+        self.alt = 1.0
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
@@ -49,6 +49,22 @@ class Mode7:
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 1
+
+    def preload_levels(self, level_textures):
+        preloaded = []
+        for map_path, sky_path in level_textures:
+            floor_tex = pg.image.load(map_path).convert()
+            ceil_tex = pg.image.load(sky_path).convert()
+            tex_size = floor_tex.get_size()
+            floor_array = pg.surfarray.array3d(floor_tex)
+            ceil_tex = pg.transform.scale(ceil_tex, tex_size)
+            ceil_array = pg.surfarray.array3d(ceil_tex)
+            preloaded.append((floor_array, ceil_array, tex_size))
+        return preloaded
+
+    def apply_preloaded(self, preloaded_entry):
+        self.floor_array, self.ceil_array, self.tex_size = preloaded_entry
         self.map_mode = 1
 
     def sync_camera_to_player(self):
