@@ -2,9 +2,33 @@ import pygame as pg
 import numpy as np
 import random
 from core.projectile import Projectile
+from settings import (
+    ENEMY_HEIGHT_ADJUST_SPEED,
+    ENEMY_HEIGHT_HIT_RADIUS,
+    ENEMY_HEIGHT_MATCH_RADIUS,
+    ENEMY_MIN_HEIGHT,
+    ENEMY_MATCH_MAX_HEIGHT,
+    ENEMY_SPAWN_MAX_HEIGHT,
+    PROJECTILE_HEIGHT_HIT_RADIUS,
+)
 
 class Enemy:
-    def __init__(self, pos, speed=0.03, min_distance=2.0, damage=1):
+    DEFAULT_MIN_HEIGHT = ENEMY_MIN_HEIGHT
+    DEFAULT_SPAWN_MAX_HEIGHT = ENEMY_SPAWN_MAX_HEIGHT
+
+    def __init__(
+        self,
+        pos,
+        speed=0.03,
+        min_distance=2.0,
+        damage=1,
+        height=None,
+        min_height=ENEMY_MIN_HEIGHT,
+        spawn_max_height=ENEMY_SPAWN_MAX_HEIGHT,
+        match_max_height=ENEMY_MATCH_MAX_HEIGHT,
+        height_match_radius=ENEMY_HEIGHT_MATCH_RADIUS,
+        height_adjust_speed=ENEMY_HEIGHT_ADJUST_SPEED,
+    ):
         self.pos = np.array(pos, dtype=np.float32)
         self.speed = speed
         self.alive = True
@@ -21,8 +45,43 @@ class Enemy:
         self.hit_radius = 0.55
         self.contact_radius = 0.42
         self.bullet_hit_radius = 0.18
+        self.min_height = min_height
+        self.spawn_max_height = max(self.min_height, min(spawn_max_height, match_max_height))
+        self.match_max_height = max(self.spawn_max_height, match_max_height)
+        if height is None:
+            raw = random.uniform(self.min_height, self.spawn_max_height)
+            self.cruise_height = self._clamp_height(raw, upper_bound=self.spawn_max_height)
+        else:
+            self.cruise_height = self._clamp_height(float(height))
+        self.height = self.cruise_height
+        self.height_match_radius = max(height_match_radius, self.min_distance + 0.8)
+        self.height_adjust_speed = height_adjust_speed
+        self.height_hit_radius = ENEMY_HEIGHT_HIT_RADIUS
+        self.bullet_height_hit_radius = PROJECTILE_HEIGHT_HIT_RADIUS
 
-    def update(self, player_pos):
+    def _clamp_height(self, height, upper_bound=None):
+        if upper_bound is None:
+            upper_bound = self.match_max_height
+        return float(np.clip(height, self.min_height, upper_bound))
+
+    def _update_height(self, player_height, distance):
+        target_height = self.cruise_height
+        in_match_radius = player_height is not None and distance <= self.height_match_radius
+        if in_match_radius:
+            target_height = self._clamp_height(player_height)
+
+        height_delta = target_height - self.height
+        if abs(height_delta) < 1e-4:
+            self.height = target_height
+            return
+
+        if abs(height_delta) <= self.height_adjust_speed:
+            self.height = target_height
+            return
+
+        self.height += float(np.clip(height_delta, -self.height_adjust_speed, self.height_adjust_speed))
+
+    def update(self, player_pos, player_height=None):
         direction = player_pos - self.pos
         distance = np.linalg.norm(direction)
 
@@ -34,6 +93,8 @@ class Enemy:
             else:
                 direction /= distance
                 self.pos += direction * self.speed
+
+        self._update_height(player_height, distance)
 
         self.shoot_timer -= 1
         if self.shoot_timer <= 0:
@@ -52,11 +113,18 @@ class Enemy:
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.08, hit_radius=self.bullet_hit_radius)
+        bullet = Projectile(
+            self.pos.copy(),
+            direction,
+            speed=0.08,
+            hit_radius=self.bullet_hit_radius,
+            height=self.height,
+            vertical_hit_radius=self.bullet_height_hit_radius,
+        )
         self.bullets.append(bullet)
 
     def draw(self, screen, mode7):
-        screen_x, screen_y, scale = mode7.project(self.pos)
+        screen_x, screen_y, scale = mode7.project(self.pos, world_height=self.height)
 
         if scale > 0:
             scaled_texture = pg.transform.scale(self.texture, (scale, scale))
@@ -89,7 +157,12 @@ class Enemy:
             bullet.draw(screen, mode7)
 
     def check_collision(self, projectile):
-        if np.linalg.norm(self.pos - projectile.pos) < self.hit_radius + projectile.hit_radius:
+        planar_hit = np.linalg.norm(self.pos - projectile.pos) < self.hit_radius + projectile.hit_radius
+        proj_height = getattr(projectile, "height", self.match_max_height)
+        vertical_hit = abs(self.height - proj_height) < (
+            self.height_hit_radius + getattr(projectile, "vertical_hit_radius", projectile.hit_radius)
+        )
+        if planar_hit and vertical_hit:
             self.hit_timer = 10
             self.hp -= 50
             if self.hp <= 0:
@@ -98,8 +171,8 @@ class Enemy:
         return False
 
 class TankEnemy(Enemy):
-    def __init__(self, pos):
-        super().__init__(pos, speed=0.02, min_distance=1.5, damage=2)
+    def __init__(self, pos, height=None):
+        super().__init__(pos, speed=0.02, min_distance=1.5, damage=2, height=height)
         self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank.png').convert_alpha()
         self.hp = 400
         self.max_hp = 400
@@ -107,6 +180,8 @@ class TankEnemy(Enemy):
         self.hit_radius = 0.72
         self.contact_radius = 0.5
         self.bullet_hit_radius = 0.22
+        self.height_adjust_speed *= 0.8
+        self.height_hit_radius = 0.18
 
     def shoot(self, player_pos):
         direction = player_pos - self.pos
@@ -114,12 +189,19 @@ class TankEnemy(Enemy):
         if norm == 0:
             return
         direction = direction / norm
-        bullet = Projectile(self.pos.copy(), direction, speed=0.16, hit_radius=self.bullet_hit_radius)
+        bullet = Projectile(
+            self.pos.copy(),
+            direction,
+            speed=0.16,
+            hit_radius=self.bullet_hit_radius,
+            height=self.height,
+            vertical_hit_radius=self.bullet_height_hit_radius,
+        )
         self.bullets.append(bullet)
 
 class FastEnemy(Enemy):
-    def __init__(self, pos):
-        super().__init__(pos, speed=0.04, min_distance=0.5, damage=4)
+    def __init__(self, pos, height=None):
+        super().__init__(pos, speed=0.04, min_distance=0.5, damage=4, height=height)
         self.texture = pg.image.load('assets/textures/enemies/zeppelin_tnt.png').convert_alpha()
         self.hp = 1  # Dies on contact
         self.max_hp = 1
@@ -127,8 +209,11 @@ class FastEnemy(Enemy):
         self.bullets = []  # No bullets
         self.hit_radius = 0.4
         self.contact_radius = 0.34
+        self.height_adjust_speed *= 1.5
+        self.height_match_radius += 0.5
+        self.height_hit_radius = 0.12
 
-    def update(self, player_pos):
+    def update(self, player_pos, player_height=None):
         direction = player_pos - self.pos
         distance = np.linalg.norm(direction)
 
@@ -136,5 +221,7 @@ class FastEnemy(Enemy):
             direction /= distance
             self.pos += direction * self.speed
 
-    def shoot(self, player_pos):
+        self._update_height(player_height, distance)
+
+    def shoot(self, _player_pos):
         pass  # Disable shooting
