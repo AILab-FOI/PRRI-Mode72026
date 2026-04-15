@@ -78,7 +78,7 @@ class App:
             self.game.update(player_pos)
             if self.weapon == WeaponType.MINIGUN and self.shooting:
                 self.try_fire_weapon()
-            self.clock.tick()
+            self.clock.tick(60)
             pg.display.set_caption(f'{self.clock.get_fps():.1f}')
 
 

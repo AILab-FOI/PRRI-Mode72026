@@ -3,6 +3,7 @@ import random
 
 from entities.enemies import Enemy, FastEnemy, TankEnemy
 from entities.obstacles import Obstacle, SmallBuilding, LargeBuilding
+from settings import PLAYER_MAX_ALTITUDE
 
 
 LEVEL_TEXTURES = [
@@ -37,14 +38,16 @@ class LevelManager:
 
         for _ in range(5 + wave_num * 2):
             x, y = random.uniform(-10, 10), random.uniform(-10, 10)
+            spawn_height = float(getattr(self.mode7, "alt", Enemy.DEFAULT_MIN_HEIGHT))
             if wave_num < 5:
-                enemy = Enemy((x, y))
+                enemy_cls = Enemy
             elif wave_num < 10:
-                enemy = random.choice([Enemy((x, y)), FastEnemy((x, y))])
+                enemy_cls = random.choice([Enemy, FastEnemy])
             elif wave_num < 15:
-                enemy = random.choice([FastEnemy((x, y)), TankEnemy((x, y))])
+                enemy_cls = random.choice([FastEnemy, TankEnemy])
             else:
-                enemy = random.choice([Enemy((x, y)), FastEnemy((x, y)), TankEnemy((x, y))])
+                enemy_cls = random.choice([Enemy, FastEnemy, TankEnemy])
+            enemy = enemy_cls((x, y), height=spawn_height)
             self.enemies.append(enemy)
 
         num_obstacles = min(3 + wave_num, 15) 
@@ -64,4 +67,3 @@ class LevelManager:
                 k=1,
             )[0]
             self.obstacles.append(building_type((ox, oy),texture_path="assets/textures/environment/ground_halfsnow_lowres.png"))
-

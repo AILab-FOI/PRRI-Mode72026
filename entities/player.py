@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import time
 
-from settings import SPEED, MAP_BOUND
+from settings import MAP_BOUND, PLAYER_HEIGHT_HIT_RADIUS, SPEED
 
 class Player:
     def __init__(self):
@@ -18,6 +18,7 @@ class Player:
         self.health = 30
         self.max_health = 30
         self.hit_radius = 0.32
+        self.height_hit_radius = PLAYER_HEIGHT_HIT_RADIUS
         self.graze_radius = 0.72
         self.invulnerability_duration = 0.75
         self.invulnerable_until = 0
