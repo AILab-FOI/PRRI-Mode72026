@@ -77,9 +77,9 @@ class Mode7:
     def update(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_q]:
-            self.alt -= SPEED * 1.2
+            self.alt -= PLAYER_ALTITUDE_SPEED
         if keys[pg.K_e]:
-            self.alt += SPEED * 1.2
+            self.alt += PLAYER_ALTITUDE_SPEED
         self.alt = min(max(self.alt, PLAYER_MIN_ALTITUDE), PLAYER_MAX_ALTITUDE)
 
         self.sync_camera_to_player()
