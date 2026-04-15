@@ -284,9 +284,10 @@ class PlayerMechanicsTests(unittest.TestCase):
         with patch("pygame.image.load", return_value=ImageStub()):
             enemy = Enemy((0.0, 0.0), height=1.0)
 
-        for _ in range(10):
+        for _ in range(9):
             enemy.update(np.array([0.0, 2.0], dtype=np.float32), player_height=0.1)
 
+        # After partial descent: moved but hasn't clamped to floor yet
         self.assertLess(enemy.height, 1.0)
         self.assertGreater(enemy.height, enemy.min_height)
 
@@ -332,20 +333,44 @@ class PlayerMechanicsTests(unittest.TestCase):
         self.assertGreater(enemy.cruise_height, 4.0)
 
     def test_player_at_min_altitude_can_hit_enemy_at_min_height(self):
-        """Gap between player_min (0.1) and enemy_min (0.35) must be within hit threshold."""
+        """Gap between PLAYER_MIN_ALTITUDE (0.05) and ENEMY_MIN_HEIGHT (0.18) must be within hit threshold."""
+        from settings import PLAYER_MIN_ALTITUDE, ENEMY_MIN_HEIGHT
         with patch("pygame.image.load", return_value=ImageStub()):
-            enemy = Enemy((0.0, 0.0), height=0.35)
+            enemy = Enemy((0.0, 0.0), height=ENEMY_MIN_HEIGHT)
 
         projectile = Projectile(
             player_pos=np.array([0.0, 0.0], dtype=np.float32),
             player_angle=np.array([0.0, 0.0], dtype=np.float32),
             speed=0.0,
             hit_radius=0.18,
-            height=0.1,
+            height=PLAYER_MIN_ALTITUDE,
         )
 
         self.assertTrue(enemy.check_collision(projectile),
-                        "Player at min altitude (0.1) must be able to hit enemy at min height (0.35)")
+                        f"Player at min altitude ({PLAYER_MIN_ALTITUDE}) must be able to hit "
+                        f"enemy at min height ({ENEMY_MIN_HEIGHT})")
+
+    def test_player_at_max_altitude_can_hit_enemy_converging_from_below(self):
+        """At max altitude a shot must land on an enemy that is close but not yet fully ascended."""
+        from settings import PLAYER_MAX_ALTITUDE, ENEMY_HEIGHT_HIT_RADIUS, PROJECTILE_HEIGHT_HIT_RADIUS
+        # Worst-case: enemy is exactly one threshold away from player max
+        threshold = ENEMY_HEIGHT_HIT_RADIUS + PROJECTILE_HEIGHT_HIT_RADIUS
+        enemy_height = PLAYER_MAX_ALTITUDE - threshold + 0.01  # just inside the band
+
+        with patch("pygame.image.load", return_value=ImageStub()):
+            enemy = Enemy((0.0, 0.0), height=enemy_height)
+
+        projectile = Projectile(
+            player_pos=np.array([0.0, 0.0], dtype=np.float32),
+            player_angle=np.array([0.0, 0.0], dtype=np.float32),
+            speed=0.0,
+            hit_radius=0.18,
+            height=PLAYER_MAX_ALTITUDE,
+        )
+
+        self.assertTrue(enemy.check_collision(projectile),
+                        f"Player at max altitude ({PLAYER_MAX_ALTITUDE}) must hit enemy "
+                        f"converging from {enemy_height:.3f}")
 
     def test_enemy_spawned_at_player_altitude_is_immediately_hittable(self):
         """Enemy created at player altitude must be hittable with zero delay."""
