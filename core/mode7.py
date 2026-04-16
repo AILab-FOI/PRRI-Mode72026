@@ -41,7 +41,10 @@ class Mode7:
 
     def sync_camera_to_player(self):
         player = self.app.player
-        self.camera_pos = player.world_pos.copy()
+        k = SPRITE_SCREEN_Y - HALF_HEIGHT  # 80 px — sprite offset from horizon
+        pivot_dist = FOCAL_LEN / (k + (k + 1) * self.alt)
+        forward = np.array([np.sin(player.angle), np.cos(player.angle)], dtype=np.float32)
+        self.camera_pos = player.world_pos - forward * pivot_dist
         self.camera_angle = player.angle
 
 
@@ -101,7 +104,7 @@ class Mode7:
             new_alt = alt
             for j in range(HALF_HEIGHT, HEIGHT):
                 x = HALF_WIDTH - i
-                y = j + FOCAL_LEN
+                y = FOCAL_LEN
                 z = j - HALF_HEIGHT + new_alt
 
                 # rotation
