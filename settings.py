@@ -8,7 +8,7 @@ WIN_RES = WIDTH, HEIGHT = 1600, 900
 HALF_WIDTH, HALF_HEIGHT = WIDTH // 2, HEIGHT // 2
 FOCAL_LEN = 250
 SCALE = 100
-SPEED = 0.05
+SPEED = 0.1
 MENU = 'menu' # *States
 GAME = 'game'
 GAME_OVER = 'game_over'
