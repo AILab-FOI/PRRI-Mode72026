@@ -31,12 +31,14 @@ class App:
             WeaponType.REVOLVER: 0.34,
             WeaponType.SHOTGUN: 0.58,
             WeaponType.MINIGUN: 0.09,
+            WeaponType.ROCKET_LAUNCHER: 1.5,
         }
 
         self.start_time = time.time()
         self.enemies_killed = 0
         self.results_screen = None
         self.shooting = False
+        self.rocket_shots_remaining = 0
         self.status_message = ""
         self.status_message_until = 0
         self.audio.play_menu_music()
@@ -130,9 +132,17 @@ class App:
     def apply_powerup(self, weapon_type):
         print(f"[POWERUP] Weapon set to {weapon_type.value}")
         self.weapon = weapon_type
-        self.weapon_timer = time.time() + 10
+        if weapon_type == WeaponType.ROCKET_LAUNCHER:
+            if self.weapon == WeaponType.ROCKET_LAUNCHER:
+                self.rocket_shots_remaining += 5
+            else:
+                self.rocket_shots_remaining = 5
+            self.weapon_timer = 0
+            self.show_status_message(f"{self.rocket_shots_remaining} Rockets loaded!", duration=1.8)
+        else:
+            self.weapon_timer = time.time() + 10
+            self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
         self.audio.play_powerup()
-        self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
 
     def show_status_message(self, message, duration=1.8):
         self.status_message = message
@@ -157,6 +167,15 @@ class App:
         elif self.weapon == WeaponType.MINIGUN:
             self.audio.play_minigun()
             self.game.shoot_minigun(self.player.angle)
+        elif self.weapon == WeaponType.ROCKET_LAUNCHER:
+            self.audio.play_shotgun()
+            self.game.shoot_rocket_launcher(self.player.angle)
+            self.audio.play_shotgun_reload()
+            self.rocket_shots_remaining -= 1
+            if self.rocket_shots_remaining <= 0:
+                self.weapon = WeaponType.REVOLVER
+                self.weapon_timer = 0
+                self.show_status_message("Rockets depleted", duration=1.8)
 
         now = time.time()
         self.last_shot_time = now
