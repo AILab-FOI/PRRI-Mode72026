@@ -1,8 +1,8 @@
 import pygame as pg
 import numpy as np
 import random
-from core.projectile import Projectile
-from entities.drops import HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop
+from core.projectile import Projectile, RocketProjectile
+from entities.drops import HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop, RocketLauncherDrop
 from entities.enemies import FastEnemy
 from managers.level import LevelManager
 from entities.obstacles import Obstacle
@@ -54,16 +54,13 @@ class Game:
                     continue
                 if enemy.check_collision(proj):
                     proj.active = False
+                    if isinstance(proj, RocketProjectile):
+                        self.explosion_sound.play()
+                        enemy.hp -= 50  # total 100 damage (check_collision already dealt 50)
+                        if enemy.hp <= 0:
+                            enemy.alive = False
                     if not enemy.alive:
-                        self.app.audio.play_enemy_dead()
-                        self.app.enemies_killed += 1
-                        if random.random() < 0.3:
-                            drop_type = random.choice([HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop])
-                            pos = enemy.pos.copy()
-                            if drop_type == HealthDrop:
-                                self.drops.append(HealthDrop(pos, self.player, self.app))
-                            else:
-                                self.drops.append(drop_type(pos, self.app))
+                        self._on_enemy_killed(enemy)
                     break
 
         self.projectiles = [p for p in self.projectiles if p.active]
@@ -157,3 +154,20 @@ class Game:
 
     def get_projectile_offset(self, pos):
         return 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
+
+    def _on_enemy_killed(self, enemy):
+        self.app.audio.play_enemy_dead()
+        self.app.enemies_killed += 1
+        if random.random() < 0.3:
+            drop_type = random.choice([HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop, RocketLauncherDrop])
+            pos = enemy.pos.copy()
+            if drop_type == HealthDrop:
+                self.drops.append(HealthDrop(pos, self.player, self.app))
+            else:
+                self.drops.append(drop_type(pos, self.app))
+
+    def shoot_rocket_launcher(self, angle):
+        pos = Game.get_player_projectile_spawn_pos(self)
+        self.projectiles.append(
+            RocketProjectile(pos, angle, height=Game.get_player_height(self))
+        )

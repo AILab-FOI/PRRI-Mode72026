@@ -56,3 +56,25 @@ class Projectile:
         if scale > 0:
             radius = max(2, scale // self.radius_divisor)
             pg.draw.circle(screen, self.color, (int(screen_x), int(screen_y)), radius)
+
+
+class RocketProjectile(Projectile):
+    def __init__(self, player_pos, player_angle, height=AIR_LANE_REFERENCE_HEIGHT):
+        super().__init__(
+            player_pos,
+            player_angle,
+            speed=0.22,
+            max_distance=18,
+            offset_distance=0.0,
+            hit_radius=0.28,
+            height=height,
+        )
+        self.color = (255, 120, 20)
+        self.radius_divisor = 7
+
+    def draw(self, screen, mode7):
+        screen_x, screen_y, scale = mode7.project(self.pos, world_height=self.height)
+        if scale > 0:
+            radius = max(4, scale // self.radius_divisor)
+            pg.draw.circle(screen, self.color, (int(screen_x), int(screen_y)), radius)
+            pg.draw.circle(screen, (255, 220, 60), (int(screen_x), int(screen_y)), max(2, radius // 2))

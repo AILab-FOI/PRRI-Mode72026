@@ -15,6 +15,7 @@ class UIManager:
             WeaponType.REVOLVER: pg.image.load("assets/textures/powerups/revolver_steampunk.png").convert_alpha(),
             WeaponType.SHOTGUN: pg.image.load("assets/textures/powerups/shotgun_steampunk.png").convert_alpha(),
             WeaponType.MINIGUN: pg.image.load("assets/textures/powerups/minigun_steampunk.png").convert_alpha(),
+            WeaponType.ROCKET_LAUNCHER: pg.image.load("assets/textures/powerups/Speed_powerup.png").convert_alpha(),
         }
         health_bar_sprite = pg.image.load("assets/textures/ui/Steampunk_healthbar_anim.png").convert_alpha()
         self.frame_width = 64
@@ -77,7 +78,18 @@ class UIManager:
         self.draw_health()
         self.draw_status_message()
 
-        if self.app.weapon != WeaponType.REVOLVER and time.time() < self.app.weapon_timer:
+        if self.app.rocket_shots_remaining > 0:
+            shots = self.app.rocket_shots_remaining
+            font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
+            label = font.render("Rockets", True, (255, 160, 30))
+            count = font.render(f"x{shots}", True, (255, 200, 60))
+            right_margin = 20
+            label_x = self.screen.get_width() - label.get_width() - right_margin
+            count_x = self.screen.get_width() - count.get_width() - right_margin
+            self.screen.blit(label, (label_x, 215))
+            self.screen.blit(count, (count_x, 245))
+
+        if self.app.weapon != WeaponType.REVOLVER and self.app.weapon != WeaponType.ROCKET_LAUNCHER and time.time() < self.app.weapon_timer:
             x, y = 85, 600
             total = 10
             remaining = self.app.weapon_timer - time.time()

@@ -93,3 +93,15 @@ class SpeedUpDrop(Drop):
         print("[DROP] Picked up speed power-up!")
         self.app.apply_speed_boost(1.6, duration=5.4)
         return True
+
+
+class RocketLauncherDrop(Drop):
+    def __init__(self, pos, app):
+        super().__init__(pos)
+        self.texture = pg.image.load("assets/textures/powerups/Speed_powerup.png").convert_alpha()
+        self.app = app
+
+    def on_pickup(self):
+        print("[DROP] Picked up rocket launcher!")
+        self.app.apply_powerup(WeaponType.ROCKET_LAUNCHER)
+        return True
