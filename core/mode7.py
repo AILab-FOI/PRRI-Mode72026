@@ -13,7 +13,7 @@ class Mode7:
     def __init__(self, app):
         self.app = app
 #        self.floor_tex = pg.image.load('assets/textures/environment/ground_town_lowres.png').convert()
-        self.set_textures('assets/textures/environment/sky_lowres.png', 'assets/textures/environment/ground_grass_lowres.png')
+        self.set_map('assets/textures/environment/map1.png', 'assets/textures/environment/sky_cloudyday_lowres.png')
         self.tex_size = self.floor_tex.get_size()
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
 
@@ -24,7 +24,10 @@ class Mode7:
 
         self.screen_array = pg.surfarray.array3d(pg.Surface(WIN_RES))
 
-        self.alt = 1.0
+        self.map_mode = 0
+        self.map_world_size = 24.0
+        self.alt = AIR_LANE_REFERENCE_HEIGHT
+        self.reference_flight_height = AIR_LANE_REFERENCE_HEIGHT
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
@@ -38,6 +41,32 @@ class Mode7:
         self.floor_array = pg.surfarray.array3d(self.floor_tex)
         self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
         self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 0
+
+    def set_map(self, map_path, sky_path='assets/textures/environment/sky_lowres.png'):
+        self.floor_tex = pg.image.load(map_path).convert()
+        self.ceil_tex = pg.image.load(sky_path).convert()
+        self.tex_size = self.floor_tex.get_size()
+        self.floor_array = pg.surfarray.array3d(self.floor_tex)
+        self.ceil_tex = pg.transform.scale(self.ceil_tex, self.tex_size)
+        self.ceil_array = pg.surfarray.array3d(self.ceil_tex)
+        self.map_mode = 1
+
+    def preload_levels(self, level_textures):
+        preloaded = []
+        for map_path, sky_path in level_textures:
+            floor_tex = pg.image.load(map_path).convert()
+            ceil_tex = pg.image.load(sky_path).convert()
+            tex_size = floor_tex.get_size()
+            floor_array = pg.surfarray.array3d(floor_tex)
+            ceil_tex = pg.transform.scale(ceil_tex, tex_size)
+            ceil_array = pg.surfarray.array3d(ceil_tex)
+            preloaded.append((floor_array, ceil_array, tex_size))
+        return preloaded
+
+    def apply_preloaded(self, preloaded_entry):
+        self.floor_array, self.ceil_array, self.tex_size = preloaded_entry
+        self.map_mode = 1
 
     def sync_camera_to_player(self):
         player = self.app.player
@@ -51,15 +80,16 @@ class Mode7:
     def update(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_q]:
-            self.alt += SPEED
+            self.alt -= PLAYER_ALTITUDE_SPEED
         if keys[pg.K_e]:
-            self.alt -= SPEED
-        self.alt = min(max(self.alt, 0.3), 4.0)
+            self.alt += PLAYER_ALTITUDE_SPEED
+        self.alt = min(max(self.alt, PLAYER_MIN_ALTITUDE), PLAYER_MAX_ALTITUDE)
 
         self.sync_camera_to_player()
 
         self.screen_array = self.render_frame(self.floor_array, self.ceil_array, self.screen_array,
-                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt)
+                                              self.tex_size, self.camera_angle, self.camera_pos, self.alt,
+                                              self.map_mode, self.map_world_size)
 
     def draw(self):
         pg.surfarray.blit_array(self.app.screen, self.screen_array)
@@ -76,8 +106,8 @@ class Mode7:
         blit_y = SPRITE_SCREEN_Y - SPRITE_DISPLAY_SIZE // 2
         self.app.screen.blit(sprite, (blit_x, blit_y))
 
-    def project(self, world_pos):
-        """Convert world coordinates (x, y) to screen coordinates (screen_x, screen_y) with size scaling"""
+    def project(self, world_pos, world_height=None):
+        """Convert world coordinates (x, y) to screen coordinates with optional air-lane height."""
         relative_pos = world_pos - self.camera_pos
         rotated_x = relative_pos[0] * np.cos(self.camera_angle) - relative_pos[1] * np.sin(self.camera_angle)
         rotated_y = relative_pos[0] * np.sin(self.camera_angle) + relative_pos[1] * np.cos(self.camera_angle)
@@ -86,7 +116,8 @@ class Mode7:
             return -1000, -1000, 0  # Return an off-screen position
 
         screen_x = int(HALF_WIDTH + rotated_x / rotated_y * WIDTH / 4)
-        screen_y = int(HALF_HEIGHT - self.alt * PROJECTION_Y_SCALE / rotated_y)
+        h = world_height if world_height is not None else 0.0
+        screen_y = int(HALF_HEIGHT + (self.alt - h) * PROJECTION_Y_SCALE / rotated_y)
 
         # Scale size based on distance (closer = bigger)
         scale = max(5, int(100 / rotated_y))  # Prevent scale from going too small
@@ -95,7 +126,8 @@ class Mode7:
 
     @staticmethod
     @njit(fastmath=True, parallel=True)
-    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt):
+    def render_frame(floor_array, ceil_array, screen_array, tex_size, angle, player_pos, alt,
+                     map_mode, map_world_size):
 
         sin, cos = np.sin(angle), np.cos(angle)
 
@@ -116,13 +148,22 @@ class Mode7:
                 floor_y = py / z + player_pos[1]
 
                 # floor pos and color
-                floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
-                floor_col = floor_array[floor_pos]
+                floor_col = floor_array[0, 0]
+                if map_mode == 1:
+                    # single map image — linear mapping, no tiling
+                    u = int((floor_x / map_world_size + 0.5) * tex_size[0])
+                    v = int((floor_y / map_world_size + 0.5) * tex_size[1])
+                    if 0 <= u < tex_size[0] and 0 <= v < tex_size[1]:
+                        floor_col = floor_array[u, v]
+                    else:
+                        floor_col = floor_array[0, 0] - floor_array[0, 0]
+                else:
+                    floor_pos = int(floor_x * SCALE % tex_size[0]), int(floor_y * SCALE % tex_size[1])
+                    floor_col = floor_array[floor_pos]
 
                 # ceil projection and transformation
                 ceil_x = alt * px / z - player_pos[0] * 0.3
                 ceil_y = alt * py / z + player_pos[1] * 0.3
-
 
                 # ceil pos and color
                 ceil_u = int(np.abs(ceil_x * SCALE) % tex_size[0])
@@ -131,7 +172,6 @@ class Mode7:
                 ceil_col = ceil_array[ceil_pos]
 
                 # shading
-                # depth = 4 * abs(z) / HALF_HEIGHT
                 depth = min(max(2.5 * (abs(z) / HALF_HEIGHT), 0), 1)
                 fog = (1 - depth) * 230
 
