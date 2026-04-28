@@ -31,3 +31,4 @@ class WeaponType(str, Enum):
     REVOLVER = "revolver"
     SHOTGUN = "shotgun"
     MINIGUN = "minigun"
+    ROCKET_LAUNCHER = "rocket_launcher"
