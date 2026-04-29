@@ -7,9 +7,9 @@ from entities.player import Player
 from managers.audio import AudioManager
 from managers.game import Game
 from managers.ui import UIManager
-from screens.menu import Menu
+from screens.menu import Menu, LoadingScreen
 from screens.results import ResultsScreen
-from settings import GAME, GAME_OVER, MENU, WIN_RES, WeaponType
+from settings import GAME, GAME_OVER, LOADING, MENU, WIN_RES, WeaponType
 
 class App:
     def __init__(self):
@@ -20,8 +20,10 @@ class App:
         self.audio = AudioManager()
         self.mode7 = Mode7(self)
         self.player = Player()
+        self.mode7.update()  # warm up numba JIT at startup so loading screen animates freely
         self.game = Game(self.mode7, self.player, self)
         self.menu = Menu(self)
+        self.loading_screen = LoadingScreen(self)
         self.ui_manager = UIManager(self)
         self.state = MENU
         self.last_shot_time = 0
@@ -50,6 +52,8 @@ class App:
     def update(self):
         if self.state == MENU:
             self.menu.update()
+        elif self.state == LOADING:
+            self.loading_screen.update()
         # Reset weapon after timer
         if self.weapon != WeaponType.REVOLVER and self.weapon_timer > 0 and time.time() > self.weapon_timer:
             if self.weapon == WeaponType.MINIGUN:
@@ -92,6 +96,9 @@ class App:
     def draw(self):
         if self.state == MENU:
             self.menu.draw()
+        elif self.state == LOADING:
+            self.loading_screen.draw()
+            pg.display.flip()
         elif self.state == GAME:
             self.mode7.draw()
             self.game.draw(self.screen)
@@ -110,9 +117,7 @@ class App:
                 pg.quit()
                 sys.exit()
             if self.state == MENU and event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                self.__init__()
-                self.state = GAME
-                self.switch_to_game()
+                self.menu.start_game()
             elif self.state == GAME_OVER:
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     self.__init__()
