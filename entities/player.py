@@ -23,6 +23,8 @@ class Player:
         self.invulnerability_duration = 0.75
         self.invulnerable_until = 0
         self.hit_sound = pg.mixer.Sound('assets/music/HP loss.mp3')
+        self.animation_state = "neutral"
+        self.damage_taken = 0
 
     @property
     def pos(self):
@@ -37,8 +39,8 @@ class Player:
         if now < self.invulnerable_until or self.health <= 0:
             return False
 
-        print(f"[DMG] Taking {amount} damage")
         self.health = max(0, self.health - amount)
+        self.damage_taken += amount
         self.invulnerable_until = now + self.invulnerability_duration
         self.hit_sound.play()
         return True
@@ -62,6 +64,23 @@ class Player:
             move_input += 1.0
         if keys[pg.K_s]:
             move_input -= 1.0
+
+        altitude_input = 0
+        if keys[pg.K_q]:
+            altitude_input -= 1
+        if keys[pg.K_e]:
+            altitude_input += 1
+
+        if turn_input < 0:
+            self.animation_state = "skretanje-lijevo"
+        elif turn_input > 0:
+            self.animation_state = "skretanje-desno"
+        elif altitude_input > 0:
+            self.animation_state = "skretanje-gore"
+        elif altitude_input < 0:
+            self.animation_state = "skretanje-dolje"
+        else:
+            self.animation_state = "neutral"
 
         if move_input != 0.0:
             forward = np.array([np.sin(self.angle), np.cos(self.angle)], dtype=np.float32)

@@ -19,6 +19,7 @@ class Game:
         self.drops = []
         self.obstacles = []
         self.wave = 1
+        self.boss_active = False
         self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles)
         self.wave_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.explosion_sound = pg.mixer.Sound("assets/music/eksplozija.mp3")
@@ -102,8 +103,14 @@ class Game:
         self.obstacles[:] = [o for o in self.obstacles if o.alive]
 
         if len(self.enemies) == 0:
-            self.wave += 1
-            self.level_manager.spawn_wave(self.wave)
+            if self.boss_active:
+                self.boss_active = False
+                self.app.on_boss_defeated()
+            elif self.wave in (3, 6, 9):
+                self.app.trigger_cutscene()
+            else:
+                self.wave += 1
+                self.level_manager.spawn_wave(self.wave)
 
     def draw(self, screen):
         for proj in self.projectiles:
@@ -171,3 +178,12 @@ class Game:
         self.projectiles.append(
             RocketProjectile(pos, angle, height=Game.get_player_height(self))
         )
+
+    def spawn_boss(self):
+        from entities.enemies import BossEnemy
+        self.enemies.clear()
+        self.obstacles.clear()
+        self.projectiles.clear()
+        self.boss_active = True
+        self.level_manager.apply_boss_map()
+        self.enemies.append(BossEnemy((0.0, 5.0), height=self.mode7.alt))

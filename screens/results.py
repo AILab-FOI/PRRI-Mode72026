@@ -4,7 +4,7 @@ import time
 class ResultsScreen:
     def __init__(self, screen, time_survived, enemies_killed, waves_survived):
         self.screen = screen
-        self.bg_image = pg.image.load("assets/textures/ui/gameoverBG.png").convert()
+        self.bg_image = pg.image.load("assets/textures/ui/main_menu_no_text.png").convert()
         self.bg_image = pg.transform.scale(self.bg_image, self.screen.get_size())
         self.time_survived = time_survived
         self.enemies_killed = enemies_killed
