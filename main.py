@@ -7,9 +7,10 @@ from entities.player import Player
 from managers.audio import AudioManager
 from managers.game import Game
 from managers.ui import UIManager
+from screens.cutscene import CutsceneScreen
 from screens.menu import Menu, LoadingScreen
 from screens.results import ResultsScreen
-from settings import GAME, GAME_OVER, LOADING, MENU, WIN_RES, WeaponType
+from settings import CUTSCENE, GAME, GAME_OVER, LOADING, MENU, WIN_RES, WeaponType
 
 class App:
     def __init__(self):
@@ -24,6 +25,7 @@ class App:
         self.game = Game(self.mode7, self.player, self)
         self.menu = Menu(self)
         self.loading_screen = LoadingScreen(self)
+        self.cutscene_screen = CutsceneScreen(self)
         self.ui_manager = UIManager(self)
         self.state = MENU
         self.last_shot_time = 0
@@ -38,6 +40,8 @@ class App:
 
         self.start_time = time.time()
         self.enemies_killed = 0
+        self.map_kills_start = 0
+        self.map_damage_start = 0
         self.results_screen = None
         self.shooting = False
         self.rocket_shots_remaining = 0
@@ -88,6 +92,8 @@ class App:
             pg.display.set_caption(f'{self.clock.get_fps():.1f}')
 
 
+        elif self.state == CUTSCENE:
+            pass  # game is paused; input handled in check_event
         elif self.state == GAME_OVER:
             pass
 
@@ -106,6 +112,9 @@ class App:
             self.ui_manager.draw_ui()
             self.ui_manager.draw_weapon_ui()
             pg.display.flip()
+        elif self.state == CUTSCENE:
+            self.cutscene_screen.draw()
+            pg.display.flip()
         elif self.state == GAME_OVER:
             if self.results_screen:
                 self.results_screen.update()
@@ -118,6 +127,8 @@ class App:
                 sys.exit()
             if self.state == MENU and event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                 self.menu.start_game()
+            elif self.state == CUTSCENE and event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                self.cutscene_screen.continue_game()
             elif self.state == GAME_OVER:
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     self.__init__()
@@ -133,6 +144,44 @@ class App:
 
     def switch_to_game(self):
         self.audio.play_game_music()
+
+    def trigger_cutscene(self):
+        completed_wave = self.game.wave
+        map_num = completed_wave // 3  # wave 3 → 1, wave 6 → 2, wave 9 → 3
+        stats = {
+            'enemies_killed': self.enemies_killed - self.map_kills_start,
+            'damage_taken':   self.player.damage_taken - self.map_damage_start,
+            'waves': 3,
+        }
+        self.map_kills_start = self.enemies_killed
+        self.map_damage_start = self.player.damage_taken
+
+        if completed_wave < 9:
+            def on_continue():
+                self.game.wave += 1
+                self.game.level_manager.spawn_wave(self.game.wave)
+                self.state = GAME
+        else:
+            on_continue = self.start_boss
+
+        self.cutscene_screen.setup(map_num, stats, on_continue)
+        self.state = CUTSCENE
+
+    def start_boss(self):
+        self.game.wave += 1
+        self.game.spawn_boss()
+        self.state = GAME
+
+    def on_boss_defeated(self):
+        self.audio.stop_powerup()
+        self.audio.stop_move_sound()
+        self.state = GAME_OVER
+        self.results_screen = ResultsScreen(
+            self.screen,
+            int(time.time() - self.start_time),
+            self.enemies_killed,
+            self.game.wave,
+        )
 
     def apply_powerup(self, weapon_type):
         print(f"[POWERUP] Weapon set to {weapon_type.value}")

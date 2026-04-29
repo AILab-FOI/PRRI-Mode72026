@@ -1,6 +1,7 @@
 import pygame as pg
 import numpy as np
 import random
+from pathlib import Path
 from core.projectile import Projectile
 from settings import (
     ENEMY_HEIGHT_ADJUST_SPEED,
@@ -243,3 +244,42 @@ class FastEnemy(Enemy):
 
     def shoot(self, _player_pos):
         pass  # Disable shooting
+
+
+class BossEnemy(Enemy):
+    def __init__(self, pos, height=None):
+        super().__init__(pos, speed=0.015, min_distance=4.0, damage=3, height=height)
+        boss_path = 'assets/textures/enemies/Final_boss.png'
+        if Path(boss_path).exists():
+            self.texture = pg.image.load(boss_path).convert_alpha()
+        else:
+            self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank_new.png').convert_alpha()
+        self.hp = 2000
+        self.max_hp = 2000
+        self.shoot_delay = 60
+        self.hit_radius = 1.2
+        self.contact_radius = 0.8
+        self.bullet_hit_radius = 0.25
+        self.height_adjust_speed *= 0.5
+        self.height_hit_radius = 0.28
+
+    def shoot(self, player_pos):
+        direction = player_pos - self.pos
+        norm = np.linalg.norm(direction)
+        if norm == 0:
+            return
+        direction = direction / norm
+        # Triple spread shot
+        for spread_angle in (-0.3, 0.0, 0.3):
+            c, s = np.cos(spread_angle), np.sin(spread_angle)
+            d = np.array([
+                direction[0] * c - direction[1] * s,
+                direction[0] * s + direction[1] * c,
+            ], dtype=np.float32)
+            self.bullets.append(Projectile(
+                self.pos.copy(), d,
+                speed=0.12,
+                hit_radius=self.bullet_hit_radius,
+                height=self.height,
+                vertical_hit_radius=self.bullet_height_hit_radius,
+            ))

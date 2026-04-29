@@ -25,6 +25,7 @@ PROJECTILE_HEIGHT_HIT_RADIUS = 0.10
 MENU = 'menu' # *States
 LOADING = 'loading'
 GAME = 'game'
+CUTSCENE = 'cutscene'
 GAME_OVER = 'game_over'
 
 

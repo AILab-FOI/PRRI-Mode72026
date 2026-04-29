@@ -24,6 +24,7 @@ class Player:
         self.invulnerable_until = 0
         self.hit_sound = pg.mixer.Sound('assets/music/HP loss.mp3')
         self.animation_state = "neutral"
+        self.damage_taken = 0
 
     @property
     def pos(self):
@@ -38,8 +39,8 @@ class Player:
         if now < self.invulnerable_until or self.health <= 0:
             return False
 
-        print(f"[DMG] Taking {amount} damage")
         self.health = max(0, self.health - amount)
+        self.damage_taken += amount
         self.invulnerable_until = now + self.invulnerability_duration
         self.hit_sound.play()
         return True
