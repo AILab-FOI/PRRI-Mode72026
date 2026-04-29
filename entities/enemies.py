@@ -33,7 +33,7 @@ class Enemy:
         self.speed = speed
         self.alive = True
         self.min_distance = min_distance
-        self.texture = pg.image.load('assets/textures/enemies/zeppelin_obican.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_puske_new.png').convert_alpha()
         self.bullets = []
         self.hit_timer = 0
         self.hp = 100
@@ -191,7 +191,7 @@ class Enemy:
 class TankEnemy(Enemy):
     def __init__(self, pos, height=None):
         super().__init__(pos, speed=0.02, min_distance=1.5, damage=2, height=height)
-        self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank_new.png').convert_alpha()
         self.hp = 400
         self.max_hp = 400
         self.shoot_delay = 300
@@ -220,7 +220,7 @@ class TankEnemy(Enemy):
 class FastEnemy(Enemy):
     def __init__(self, pos, height=None):
         super().__init__(pos, speed=0.04, min_distance=0.5, damage=4, height=height)
-        self.texture = pg.image.load('assets/textures/enemies/zeppelin_tnt.png').convert_alpha()
+        self.texture = pg.image.load('assets/textures/enemies/zeppelin_new.png').convert_alpha()
         self.hp = 1  # Dies on contact
         self.max_hp = 1
         self.shoot_delay = None  # Not used
