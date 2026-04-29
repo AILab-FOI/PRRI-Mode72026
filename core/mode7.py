@@ -1,12 +1,17 @@
 import pygame as pg
 import numpy as np
+from pathlib import Path
 from settings import *
 from numba import njit, prange
 
 SPRITE_SCREEN_X = WIDTH // 2
 SPRITE_SCREEN_Y = HALF_HEIGHT + 80
-SPRITE_DISPLAY_SIZE = 88
+SPRITE_DISPLAY_SIZE = 128
 PROJECTION_Y_SCALE = 50.0
+PLAYER_ANIMATION_FRAME_MS = 110
+PLAYER_ANIMATION_ROOT = Path("assets/textures/novi-zeppelin")
+PLAYER_GLOW_PADDING = 10
+PLAYER_GLOW_COLOR = (255, 196, 92, 80)
 
 
 class Mode7:
@@ -31,8 +36,52 @@ class Mode7:
         self.camera_pos = np.zeros(2, dtype=np.float32)
         self.camera_angle = 0.0
 
-        raw_sprite = pg.image.load('assets/textures/environment/airship_1.png').convert_alpha()
-        self.player_sprite = pg.transform.scale(raw_sprite, (SPRITE_DISPLAY_SIZE, SPRITE_DISPLAY_SIZE))
+        self.player_animations = self._load_player_animations()
+
+    def _load_player_animations(self):
+        animations = {}
+        for state_dir in PLAYER_ANIMATION_ROOT.iterdir():
+            if not state_dir.is_dir():
+                continue
+
+            frames = []
+            for frame_path in sorted(state_dir.glob("*.png")):
+                raw_frame = pg.image.load(str(frame_path)).convert_alpha()
+                frames.append(self._prepare_player_sprite(raw_frame))
+
+            if frames:
+                animations[state_dir.name] = frames
+
+        if not animations:
+            raw_sprite = pg.image.load('assets/textures/environment/airship_1.png').convert_alpha()
+            fallback = self._prepare_player_sprite(raw_sprite)
+            animations["neutral"] = [fallback]
+
+        return animations
+
+    def _prepare_player_sprite(self, raw_sprite):
+        sprite = pg.transform.scale(raw_sprite, (SPRITE_DISPLAY_SIZE, SPRITE_DISPLAY_SIZE))
+        surface_size = SPRITE_DISPLAY_SIZE + PLAYER_GLOW_PADDING * 2
+        composed = pg.Surface((surface_size, surface_size), pg.SRCALPHA)
+        glow = self._make_player_glow(sprite)
+        composed.blit(glow, (0, 0))
+        composed.blit(sprite, (PLAYER_GLOW_PADDING, PLAYER_GLOW_PADDING))
+        return composed
+
+    def _make_player_glow(self, sprite):
+        surface_size = SPRITE_DISPLAY_SIZE + PLAYER_GLOW_PADDING * 2
+        glow = pg.Surface((surface_size, surface_size), pg.SRCALPHA)
+        mask_surface = pg.mask.from_surface(sprite).to_surface(
+            setcolor=PLAYER_GLOW_COLOR,
+            unsetcolor=(0, 0, 0, 0),
+        ).convert_alpha()
+        glow.blit(mask_surface, (PLAYER_GLOW_PADDING, PLAYER_GLOW_PADDING))
+
+        small_size = max(1, surface_size // 4)
+        softened = pg.transform.smoothscale(glow, (small_size, small_size))
+        softened = pg.transform.smoothscale(softened, (surface_size, surface_size))
+        glow.blit(softened, (0, 0), special_flags=pg.BLEND_RGBA_ADD)
+        return glow
 
     def set_textures(self, sky_path, ground_path):
         self.floor_tex = pg.image.load(ground_path).convert()
@@ -96,14 +145,17 @@ class Mode7:
     
     def draw_player_sprite(self):
         player = self.app.player
-        sprite  = self.player_sprite
+        state = getattr(player, "animation_state", "neutral")
+        frames = self.player_animations.get(state) or self.player_animations.get("neutral")
+        frame_index = (pg.time.get_ticks() // PLAYER_ANIMATION_FRAME_MS) % len(frames)
+        sprite = frames[frame_index]
 
         if player.is_invulnerable() and (pg.time.get_ticks() // 90) % 2 == 0:
             sprite = sprite.copy()
             sprite.fill((255, 240, 80, 90), special_flags=pg.BLEND_RGBA_ADD)
 
-        blit_x = SPRITE_SCREEN_X - SPRITE_DISPLAY_SIZE // 2
-        blit_y = SPRITE_SCREEN_Y - SPRITE_DISPLAY_SIZE // 2
+        blit_x = SPRITE_SCREEN_X - sprite.get_width() // 2
+        blit_y = SPRITE_SCREEN_Y - sprite.get_height() // 2
         self.app.screen.blit(sprite, (blit_x, blit_y))
 
     def project(self, world_pos, world_height=None):
