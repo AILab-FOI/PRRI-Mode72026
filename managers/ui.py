@@ -17,19 +17,18 @@ class UIManager:
             WeaponType.MINIGUN: pg.image.load("assets/textures/powerups/minigun_steampunk.png").convert_alpha(),
             WeaponType.ROCKET_LAUNCHER: pg.image.load("assets/textures/powerups/Speed_powerup.png").convert_alpha(),
         }
-        health_bar_sprite = pg.image.load("assets/textures/ui/Steampunk_healthbar_anim.png").convert_alpha()
-        self.frame_width = 64
-        self.frame_height = 64
-        self.scaled_width = int(self.frame_width * 3)
-        self.scaled_height = int(self.frame_height * 3)
-        self.total_frames = 7
-        self.health_bar_frames = []
-        for i in range(self.total_frames):
-            x = i * self.frame_width
-            y = 0
-            frame = health_bar_sprite.subsurface(pg.Rect(x, y, self.frame_width, self.frame_height))
-            scaled_frame = pg.transform.scale(frame, (self.scaled_width, self.scaled_height))
-            self.health_bar_frames.append(scaled_frame)
+        bar_height = 110
+        original_full = pg.image.load("assets/textures/ui/hud_bez_pozadine.png").convert_alpha()
+        orig_w, orig_h = original_full.get_size()
+        aspect = orig_w / orig_h
+        bar_width = int(bar_height * aspect)
+        self.health_bar_full = pg.transform.scale(original_full, (bar_width, bar_height))
+        original_empty = pg.image.load("assets/textures/ui/bez bara.png").convert_alpha()
+        self.health_bar_empty = pg.transform.scale(original_empty, (bar_width, bar_height))
+        # x offset i širina crvenog dijela bara unutar skalirane slike
+        scale = bar_height / orig_h
+        self.bar_fill_x = int(248 * scale)
+        self.bar_fill_w = int((968 - 248) * scale)
 
         self.progression_box = pg.image.load("assets/textures/ui/progression_blank.png").convert_alpha()
         self.progression_box = pg.transform.scale(self.progression_box, (200, 200))
@@ -115,22 +114,27 @@ class UIManager:
                 self.screen.blit(rotated_clip, (x2, y2 + (self.bar_speed.get_height() - full_height)))
 
     def draw_health(self):
-        health_index = 6 - (self.app.player.health // 5)
-        if health_index >= 30 or health_index <= 0:
-            health_index = 0
-        if self.app.player.health <= 4 and self.app.player.health >= 1:
-            health_index = 5
-        x = self.screen.get_width() - self.scaled_width - 10
-        y = 10
-        self.screen.blit(self.health_bar_frames[health_index], (x, y))
+        bar_w = self.health_bar_full.get_width()
+        bar_h = self.health_bar_full.get_height()
+        padding = 40
+        x = self.screen.get_width() - bar_w - padding
+        y = padding
+
+        # prazni okvir uvijek vidljiv
+        self.screen.blit(self.health_bar_empty, (x, y))
+
+        # reži samo crveni dio bara po 18 segmenata, max_health = 30
+        segments = 18
+        current_segments = round(self.app.player.health / self.app.player.max_health * segments)
+        if self.app.player.health > 0:
+            current_segments = max(1, current_segments)
+        fill_w = int(self.bar_fill_w * current_segments / segments)
+        if fill_w > 0:
+            clip = self.health_bar_full.subsurface(pg.Rect(self.bar_fill_x, 0, fill_w, bar_h))
+            self.screen.blit(clip, (x + self.bar_fill_x, y))
+
         if self.app.player.is_invulnerable() and (pg.time.get_ticks() // 90) % 2 == 0:
-            pg.draw.rect(
-                self.screen,
-                (255, 231, 163),
-                (x + 22, y + 28, self.scaled_width - 44, self.scaled_height - 60),
-                3,
-                border_radius=10,
-            )
+            pg.draw.rect(self.screen, (255, 231, 163), (x, y, bar_w, bar_h), 3, border_radius=6)
 
     def draw_weapon_ui(self):
         padding = 20
