@@ -30,8 +30,8 @@ class UIManager:
         self.bar_fill_x = int(248 * scale)
         self.bar_fill_w = int((968 - 248) * scale)
 
-        self.progression_box = pg.image.load("assets/textures/ui/progression_blank.png").convert_alpha()
-        self.progression_box = pg.transform.scale(self.progression_box, (200, 200))
+        self.progression_box = pg.image.load("assets/textures/ui/wave_bg.png").convert_alpha()
+        self.progression_box = pg.transform.scale(self.progression_box, (500, 110))
 
         original_full = pg.image.load("assets/textures/ui/steampunk_bar_full.png").convert_alpha()
         scale_factor = 0.2
@@ -55,24 +55,30 @@ class UIManager:
         self.weapon_frame = pg.transform.scale(self.weapon_frame, (300, 200))
 
     def draw_ui(self):
-        box_x, box_y = 20, 20
+        box_x, box_y = 40, 40
         self.screen.blit(self.progression_box, (box_x, box_y))
 
-        font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 20)
+        font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 22)
         color = (255, 220, 180)
 
         wave_text = font.render(f"Wave: {self.app.game.wave}", True, color)
-        enemy_label = font.render("Enemies:", True, color)
-        enemy_number = font.render(str(len(self.app.game.enemies)), True, color)
+        enemy_text = font.render(f"Enemies: {len(self.app.game.enemies)}", True, color)
 
-        text_x = box_x + 70
-        wave_y = box_y + 65
-        enemy_y = box_y + 100
-        enemy_number_y = enemy_y + 25
+        # tamni bar unutar slike: x od 113 do 424, sredina y 55
+        bar_mid_x = box_x + (113 + 424) // 2
+        bar_mid_y = box_y + 55
 
-        self.screen.blit(wave_text, (text_x, wave_y))
-        self.screen.blit(enemy_label, (text_x, enemy_y))
-        self.screen.blit(enemy_number, (text_x + 25, enemy_number_y))
+        gap = 20
+        total_w = wave_text.get_width() + gap + enemy_text.get_width()
+
+        wave_x = bar_mid_x - total_w // 2
+        wave_y = bar_mid_y - wave_text.get_height() // 2
+
+        enemy_x = wave_x + wave_text.get_width() + gap
+        enemy_y = bar_mid_y - enemy_text.get_height() // 2
+
+        self.screen.blit(wave_text, (wave_x, wave_y))
+        self.screen.blit(enemy_text, (enemy_x, enemy_y))
 
         self.draw_health()
         self.draw_status_message()
