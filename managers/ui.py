@@ -23,7 +23,7 @@ class UIManager:
         aspect = orig_w / orig_h
         bar_width = int(bar_height * aspect)
         self.health_bar_full = pg.transform.scale(original_full, (bar_width, bar_height))
-        original_empty = pg.image.load("assets/textures/ui/bez bara.png").convert_alpha()
+        original_empty = pg.image.load("assets/textures/ui/hud_bez.png").convert_alpha()
         self.health_bar_empty = pg.transform.scale(original_empty, (bar_width, bar_height))
         # x offset i širina crvenog dijela bara unutar skalirane slike
         scale = bar_height / orig_h
