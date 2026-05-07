@@ -1,7 +1,7 @@
 import pygame as pg
 import numpy as np
 import random
-from core.projectile import Projectile, RocketProjectile
+from core.projectile import Projectile, RocketProjectile, AoEProjectile
 from entities.drops import HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop, RocketLauncherDrop
 from entities.enemies import FastEnemy
 from managers.level import LevelManager
@@ -44,8 +44,22 @@ class Game:
         for proj in self.projectiles:
             proj.update()
 
+        # Snapshot AoE bullets that are currently active so we can detect range-expiry detonations
+        aoe_live_before = {
+            id(b): b
+            for enemy in self.enemies
+            for b in enemy.bullets
+            if isinstance(b, AoEProjectile) and b.active
+        }
+
         for enemy in self.enemies:
             enemy.update(player_pos, player_height)
+
+        # AoE bullets that went inactive this frame (expired at max range) → apply splash
+        for enemy in self.enemies:
+            for bullet in enemy.bullets:
+                if isinstance(bullet, AoEProjectile) and not bullet.active and id(bullet) in aoe_live_before:
+                    self._apply_aoe_splash(bullet, player_pos, player_height, player_height_radius, enemy.damage)
 
         for proj in self.projectiles:
             if not proj.active:
@@ -68,6 +82,8 @@ class Game:
 
         for enemy in self.enemies:
             for bullet in enemy.bullets:
+                if not bullet.active:
+                    continue
                 planar_hit = np.linalg.norm(player_pos - bullet.pos) < self.player.hit_radius + bullet.hit_radius
                 vertical_hit = Game.has_vertical_overlap(
                     player_height,
@@ -77,6 +93,8 @@ class Game:
                 )
                 if planar_hit and vertical_hit:
                     self.player.take_damage(enemy.damage)
+                    if isinstance(bullet, AoEProjectile):
+                        self._apply_aoe_splash(bullet, player_pos, player_height, player_height_radius, enemy.damage)
                     bullet.active = False
             if isinstance(enemy, FastEnemy):
                 planar_contact = np.linalg.norm(player_pos - enemy.pos) < self.player.hit_radius + enemy.contact_radius
@@ -161,6 +179,15 @@ class Game:
 
     def get_projectile_offset(self, pos):
         return 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
+
+    def _apply_aoe_splash(self, bullet, player_pos, player_height, player_height_radius, damage):
+        splash_planar = np.linalg.norm(player_pos - bullet.pos) < bullet.aoe_radius
+        splash_vertical = Game.has_vertical_overlap(
+            player_height, player_height_radius,
+            bullet.height, bullet.aoe_radius,
+        )
+        if splash_planar and splash_vertical:
+            self.player.take_damage(damage)
 
     def _on_enemy_killed(self, enemy):
         self.app.audio.play_enemy_dead()
