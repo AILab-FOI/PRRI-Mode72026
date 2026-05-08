@@ -1,12 +1,13 @@
 import pygame as pg
 import numpy as np
 import random
+import time
 from core.projectile import Projectile, RocketProjectile, AoEProjectile
 from entities.drops import HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop, RocketLauncherDrop
 from entities.enemies import FastEnemy
 from managers.level import LevelManager
 from entities.obstacles import Obstacle
-from settings import AIR_LANE_REFERENCE_HEIGHT, PLAYER_HEIGHT_HIT_RADIUS
+from settings import AIR_LANE_REFERENCE_HEIGHT, MAP_BOUND, PLAYER_HEIGHT_HIT_RADIUS
 
 
 class Game:
@@ -18,12 +19,13 @@ class Game:
         self.enemies = []
         self.drops = []
         self.obstacles = []
-        self.wave = 1
+        self.wave = 9
         self.boss_active = False
         self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles)
         self.wave_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.explosion_sound = pg.mixer.Sound("assets/music/eksplozija.mp3")
-        self.level_manager.spawn_wave(self.wave)
+        # self.level_manager.spawn_wave(self.wave)
+        self.spawn_boss()  # TEST MODE: start directly on boss level
 
     def spawn_wave(self, wave_num):
         # TODO: replace LevelManager.spawn_wave() with 4 defined levels per GDD when level design is finalized
@@ -120,6 +122,10 @@ class Game:
             obstacle.update(self.player)
         self.obstacles[:] = [o for o in self.obstacles if o.alive]
 
+        if self.boss_active and time.time() >= self.boss_powerup_timer:
+            self._spawn_boss_powerup()
+            self.boss_powerup_timer = time.time() + 20
+
         if len(self.enemies) == 0:
             if self.boss_active:
                 self.boss_active = False
@@ -180,6 +186,18 @@ class Game:
     def get_projectile_offset(self, pos):
         return 0.5 if any(np.linalg.norm(enemy.pos - pos) < 2.0 for enemy in self.enemies) else 2.0
 
+    def _spawn_boss_powerup(self):
+        angle = random.uniform(0, 2 * np.pi)
+        radius = random.uniform(1.5, 2.5)
+        offset = np.array([np.cos(angle), np.sin(angle)], dtype=np.float32) * radius
+        pos = np.clip(self.player.world_pos + offset, -MAP_BOUND, MAP_BOUND)
+
+        drop_type = random.choice([HealthDrop, ShotgunDrop, MinigunDrop, SpeedUpDrop, RocketLauncherDrop])
+        if drop_type == HealthDrop:
+            self.drops.append(HealthDrop(pos, self.player, self.app))
+        else:
+            self.drops.append(drop_type(pos, self.app))
+
     def _apply_aoe_splash(self, bullet, player_pos, player_height, player_height_radius, damage):
         splash_planar = np.linalg.norm(player_pos - bullet.pos) < bullet.aoe_radius
         splash_vertical = Game.has_vertical_overlap(
@@ -212,5 +230,6 @@ class Game:
         self.obstacles.clear()
         self.projectiles.clear()
         self.boss_active = True
+        self.boss_powerup_timer = time.time() + 20
         self.level_manager.apply_boss_map()
         self.enemies.append(BossEnemy((0.0, 5.0), height=self.mode7.alt))
