@@ -51,7 +51,7 @@ class UIManager:
 
         for key in self.weapon_icons:
             self.weapon_icons[key] = pg.transform.scale(self.weapon_icons[key], (80, 80))
-        self.weapon_frame = pg.image.load("assets/textures/ui/UI_frame_static.png").convert_alpha()
+        self.weapon_frame = pg.image.load("assets/textures/ui/frame.png").convert_alpha()
         self.weapon_frame = pg.transform.scale(self.weapon_frame, (300, 200))
 
     def draw_ui(self):
@@ -88,9 +88,8 @@ class UIManager:
             font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
             label = font.render("Rockets", True, (255, 160, 30))
             count = font.render(f"x{shots}", True, (255, 200, 60))
-            right_margin = 20
-            label_x = self.screen.get_width() - label.get_width() - right_margin
-            count_x = self.screen.get_width() - count.get_width() - right_margin
+            label_x = (self.screen.get_width() - label.get_width()) // 2
+            count_x = (self.screen.get_width() - count.get_width()) // 2
             self.screen.blit(label, (label_x, 215))
             self.screen.blit(count, (count_x, 245))
 
