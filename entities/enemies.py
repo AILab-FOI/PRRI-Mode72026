@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import random
 from pathlib import Path
-from core.projectile import Projectile
+from core.projectile import Projectile, AoEProjectile
 from settings import (
     ENEMY_HEIGHT_ADJUST_SPEED,
     ENEMY_HEIGHT_HIT_RADIUS,
@@ -247,39 +247,107 @@ class FastEnemy(Enemy):
 
 
 class BossEnemy(Enemy):
+    # Phase thresholds (fraction of max_hp)
+    PHASE2_THRESHOLD = 0.66
+    PHASE3_THRESHOLD = 0.33
+
+    # Base stats (phase 1)
+    BASE_SPEED = 0.015        # 50% of the placeholder's 0.015
+    BASE_SHOOT_DELAY = 90
+    BASE_SIZE = 256            # pixels at reference scale (double the 128px regular enemies)
+
     def __init__(self, pos, height=None):
-        super().__init__(pos, speed=0.015, min_distance=4.0, damage=3, height=height)
+        super().__init__(pos, speed=self.BASE_SPEED, min_distance=4.0, damage=3, height=height)
         boss_path = 'assets/textures/enemies/Final_boss.png'
         if Path(boss_path).exists():
             self.texture = pg.image.load(boss_path).convert_alpha()
         else:
             self.texture = pg.image.load('assets/textures/enemies/zeppelin_tank_new.png').convert_alpha()
-        self.hp = 2000
-        self.max_hp = 2000
-        self.shoot_delay = 60
-        self.hit_radius = 1.2
+        self.hp = 3000
+        self.max_hp = 3000
+        self.shoot_delay = self.BASE_SHOOT_DELAY
+        # Hitbox scaled to 256×256 (double normal 128×128 → ~2× hit_radius)
+        self.hit_radius = 1.1
         self.contact_radius = 0.8
         self.bullet_hit_radius = 0.25
         self.height_adjust_speed *= 0.5
-        self.height_hit_radius = 0.28
+        self.height_hit_radius = 0.56   # double the normal 0.28
+        self.shot_counter = 0
+        self._phase = 1
+
+    def _current_phase(self):
+        ratio = self.hp / self.max_hp
+        if ratio > self.PHASE2_THRESHOLD:
+            return 1
+        if ratio > self.PHASE3_THRESHOLD:
+            return 2
+        return 3
+
+    def update(self, player_pos, player_height=None):
+        phase = self._current_phase()
+        if phase != self._phase:
+            self._phase = phase
+            if phase == 2:
+                self.shoot_delay = int(self.BASE_SHOOT_DELAY * 0.6)
+                # shoot_timer keeps its current value — no instant burst on transition
+            elif phase == 3:
+                self.shoot_delay = int(self.BASE_SHOOT_DELAY * 0.35)
+                self.speed = self.BASE_SPEED * 1.6
+
+        super().update(player_pos, player_height)
 
     def shoot(self, player_pos):
+        self.shot_counter += 1
         direction = player_pos - self.pos
         norm = np.linalg.norm(direction)
         if norm == 0:
             return
         direction = direction / norm
-        # Triple spread shot
-        for spread_angle in (-0.3, 0.0, 0.3):
-            c, s = np.cos(spread_angle), np.sin(spread_angle)
-            d = np.array([
-                direction[0] * c - direction[1] * s,
-                direction[0] * s + direction[1] * c,
-            ], dtype=np.float32)
-            self.bullets.append(Projectile(
-                self.pos.copy(), d,
-                speed=0.12,
-                hit_radius=self.bullet_hit_radius,
-                height=self.height,
-                vertical_hit_radius=self.bullet_height_hit_radius,
-            ))
+
+        use_aoe = (self.shot_counter % 3 == 0)
+        proj_cls = AoEProjectile if use_aoe else Projectile
+        self.bullets.append(proj_cls(
+            self.pos.copy(),
+            direction,
+            speed=0.10,
+            hit_radius=self.bullet_hit_radius,
+            height=self.height,
+            vertical_hit_radius=self.bullet_height_hit_radius,
+        ))
+
+    def draw(self, screen, mode7):
+        screen_x, screen_y, scale = mode7.project(self.pos, world_height=self.height)
+
+        if scale > 0:
+            # Draw at double the normal sprite size to match 256×256 hitbox
+            boss_scale = scale * 2
+            scaled_texture = pg.transform.scale(self.texture, (boss_scale, boss_scale))
+            screen.blit(scaled_texture, (int(screen_x) - boss_scale // 2, int(screen_y) - boss_scale // 2))
+
+            if self.hit_timer > 0:
+                flash_width = max(2, boss_scale // 12)
+                pg.draw.circle(
+                    screen,
+                    (255, 226, 128),
+                    (int(screen_x), int(screen_y)),
+                    max(6, boss_scale // 2 + 6),
+                    flash_width,
+                )
+
+            # HP bar scaled to boss sprite width
+            hp_bar_width = boss_scale
+            hp_bar_rect = pg.Rect(
+                int(screen_x - hp_bar_width / 2),
+                int(screen_y - boss_scale // 2 - 10),
+                int(hp_bar_width),
+                8,
+            )
+            pg.draw.rect(screen, (100, 0, 0), hp_bar_rect)
+            hp_ratio = self.hp / self.max_hp
+            green_rect = pg.Rect(hp_bar_rect.x, hp_bar_rect.y, int(hp_bar_rect.width * hp_ratio), hp_bar_rect.height)
+            pg.draw.rect(screen, (0, 255, 0), green_rect)
+
+            self._draw_height_indicator(screen, screen_x, screen_y, boss_scale, mode7.alt)
+
+        for bullet in self.bullets:
+            bullet.draw(screen, mode7)

@@ -78,3 +78,28 @@ class RocketProjectile(Projectile):
             radius = max(4, scale // self.radius_divisor)
             pg.draw.circle(screen, self.color, (int(screen_x), int(screen_y)), radius)
             pg.draw.circle(screen, (255, 220, 60), (int(screen_x), int(screen_y)), max(2, radius // 2))
+
+
+class AoEProjectile(Projectile):
+    """Boss AoE shot — deals area damage (checked by radius) on impact."""
+    AOE_RADIUS = 1.8
+
+    def __init__(self, pos, direction, speed, hit_radius, height, vertical_hit_radius):
+        super().__init__(
+            pos,
+            direction,
+            speed=speed,
+            hit_radius=hit_radius,
+            height=height,
+            vertical_hit_radius=vertical_hit_radius,
+        )
+        self.color = (255, 60, 200)
+        self.radius_divisor = 8
+        self.aoe_radius = self.AOE_RADIUS
+
+    def draw(self, screen, mode7):
+        screen_x, screen_y, scale = mode7.project(self.pos, world_height=self.height)
+        if scale > 0:
+            radius = max(5, scale // self.radius_divisor)
+            pg.draw.circle(screen, self.color, (int(screen_x), int(screen_y)), radius)
+            pg.draw.circle(screen, (255, 200, 240), (int(screen_x), int(screen_y)), max(2, radius // 2))
