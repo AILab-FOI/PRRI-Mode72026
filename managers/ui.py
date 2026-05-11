@@ -83,15 +83,6 @@ class UIManager:
         self.draw_health()
         self.draw_status_message()
 
-        if self.app.rocket_shots_remaining > 0:
-            shots = self.app.rocket_shots_remaining
-            font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
-            label = font.render("Rockets", True, (255, 160, 30))
-            count = font.render(f"x{shots}", True, (255, 200, 60))
-            label_x = (self.screen.get_width() - label.get_width()) // 2
-            count_x = (self.screen.get_width() - count.get_width()) // 2
-            self.screen.blit(label, (label_x, 215))
-            self.screen.blit(count, (count_x, 245))
 
         if self.app.weapon != WeaponType.REVOLVER and self.app.weapon != WeaponType.ROCKET_LAUNCHER and time.time() < self.app.weapon_timer:
             x, y = 85, 600
@@ -152,6 +143,16 @@ class UIManager:
             y = self.screen.get_height() - frame_height
         frame_rect = self.weapon_frame.get_rect()
         frame_rect.topleft = (x, y)
+        if self.app.rocket_shots_remaining > 0:
+            font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
+            text = f"Rockets  x{self.app.rocket_shots_remaining}"
+            shadow = font.render(text, True, (30, 18, 8))
+            label = font.render(text, True, (220, 210, 180))
+            lx = frame_rect.x + (frame_rect.width - label.get_width()) // 2
+            ly = frame_rect.y - label.get_height() - 2
+            self.screen.blit(shadow, (lx + 2, ly + 2))
+            self.screen.blit(label, (lx, ly))
+
         self.screen.blit(self.weapon_frame, frame_rect)
         icon = self.weapon_icons[self.app.weapon]
         icon = pg.transform.scale(icon, (128, 128))
