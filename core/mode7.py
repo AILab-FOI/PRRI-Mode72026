@@ -158,6 +158,28 @@ class Mode7:
         blit_y = SPRITE_SCREEN_Y - sprite.get_height() // 2
         self.app.screen.blit(sprite, (blit_x, blit_y))
 
+        self._draw_crosshair()
+
+    def _draw_crosshair(self):
+        import numpy as np
+        player = self.app.player
+        game = self.app.game
+
+        forward_offset = game.get_projectile_offset(player.world_pos)
+        forward = np.array([np.sin(player.angle), np.cos(player.angle)], dtype=np.float32)
+        muzzle_pos = player.world_pos + forward * forward_offset
+        muzzle_height = game.get_player_height()
+
+        cx, cy, _ = self.project(muzzle_pos, world_height=muzzle_height)
+        if cx < -500:
+            return
+
+        screen = self.app.screen
+        GOLD = (255, 255, 255)
+        SIZE = 10
+        pg.draw.line(screen, GOLD, (cx - SIZE, cy), (cx + SIZE, cy), 3)
+        pg.draw.line(screen, GOLD, (cx, cy - SIZE), (cx, cy + SIZE), 3)
+
     def project(self, world_pos, world_height=None):
         """Convert world coordinates (x, y) to screen coordinates with optional air-lane height."""
         relative_pos = world_pos - self.camera_pos
