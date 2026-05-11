@@ -40,14 +40,17 @@ class UIManager:
             (int(original_full.get_width() * scale_factor), int(original_full.get_height() * scale_factor)),
         )
 
-        original_speed = pg.image.load("assets/textures/ui/powerup_bar.png").convert_alpha()
-        scale_factor = 0.1
-        scaled_speed = pg.transform.scale(
-            original_speed,
-            (int(original_speed.get_width() * scale_factor), int(original_speed.get_height() * scale_factor)),
-        )
-
-        self.bar_speed = pg.transform.rotate(scaled_speed, 90)
+        orig_speed_full = pg.image.load("assets/textures/ui/powerup_pun.png").convert_alpha()
+        orig_speed_empty = pg.image.load("assets/textures/ui/powerup_prazan.png").convert_alpha()
+        orig_speed_h = orig_speed_full.get_height()
+        orig_speed_w = orig_speed_full.get_width()
+        speed_h = 280
+        speed_w = int(orig_speed_w * speed_h / orig_speed_h)
+        self.bar_speed_full = pg.transform.scale(orig_speed_full, (speed_w, speed_h))
+        self.bar_speed_empty = pg.transform.scale(orig_speed_empty, (speed_w, speed_h))
+        scale = speed_h / orig_speed_h
+        self.bar_speed_fill_y = int(132 * scale)
+        self.bar_speed_fill_h = int((500 - 132) * scale)
 
         for key in self.weapon_icons:
             self.weapon_icons[key] = pg.transform.scale(self.weapon_icons[key], (80, 80))
@@ -96,18 +99,20 @@ class UIManager:
                 self.screen.blit(bar_clip, (x, y))
 
         if self.app.player.speed_multiplier > 1.0 and time.time() < self.app.player.speed_timer:
-            x2, y2 = 1440, 180
+            bw = self.bar_speed_full.get_width()
+            bh = self.bar_speed_full.get_height()
+            x2 = self.screen.get_width() - bw - 40
+            y2 = 180
             total = 5.4
             remaining = self.app.player.speed_timer - time.time()
             percent = max(0, min(1, remaining / total))
 
-            full_height = int(self.bar_speed.get_height() * percent)
-            if full_height > 0:
-                bar_clip = self.bar_speed.subsurface(
-                    (0, self.bar_speed.get_height() - full_height, self.bar_speed.get_width(), full_height)
-                )
-                rotated_clip = pg.transform.rotate(bar_clip, 0)
-                self.screen.blit(rotated_clip, (x2, y2 + (self.bar_speed.get_height() - full_height)))
+            fill_h = int(self.bar_speed_fill_h * percent)
+            if fill_h > 0:
+                self.screen.blit(self.bar_speed_empty, (x2, y2))
+                top = self.bar_speed_fill_y + (self.bar_speed_fill_h - fill_h)
+                clip = self.bar_speed_full.subsurface((0, top, bw, fill_h))
+                self.screen.blit(clip, (x2, y2 + top))
 
     def draw_health(self):
         bar_w = self.health_bar_full.get_width()
