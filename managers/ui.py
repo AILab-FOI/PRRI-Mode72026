@@ -33,12 +33,20 @@ class UIManager:
         self.progression_box = pg.image.load("assets/textures/ui/wave_bg.png").convert_alpha()
         self.progression_box = pg.transform.scale(self.progression_box, (500, 110))
 
-        original_full = pg.image.load("assets/textures/ui/steampunk_bar_full.png").convert_alpha()
-        scale_factor = 0.2
-        self.bar_full = pg.transform.scale(
-            original_full,
-            (int(original_full.get_width() * scale_factor), int(original_full.get_height() * scale_factor)),
-        )
+        orig_weapon_full = pg.image.load("assets/textures/ui/weapon_bar_pun.png").convert_alpha()
+        orig_weapon_empty = pg.image.load("assets/textures/ui/weapon_bar_prazan.png").convert_alpha()
+        # originalna slika 666x375, vidljivi dio x=28 do x=644 (616px širok)
+        # skaliramo tako da tih 616px bude točno 300px (širina weapon framea)
+        scale_wb = 250 / 616
+        weapon_bar_w = int(666 * scale_wb)
+        weapon_bar_h = int(375 * scale_wb)
+        self.bar_full = pg.transform.scale(orig_weapon_full, (weapon_bar_w, weapon_bar_h))
+        self.bar_empty = pg.transform.scale(orig_weapon_empty, (weapon_bar_w, weapon_bar_h))
+        self.bar_fill_x_wb = int(173 * scale_wb)
+        self.bar_fill_w_wb = int((547 - 173) * scale_wb)
+        self.weapon_bar_x_offset = int(28 * scale_wb)
+        self.weapon_bar_w = weapon_bar_w
+        self.weapon_bar_h = weapon_bar_h
 
         orig_speed_full = pg.image.load("assets/textures/ui/powerup_pun.png").convert_alpha()
         orig_speed_empty = pg.image.load("assets/textures/ui/powerup_prazan.png").convert_alpha()
@@ -87,16 +95,6 @@ class UIManager:
         self.draw_status_message()
 
 
-        if self.app.weapon != WeaponType.REVOLVER and self.app.weapon != WeaponType.ROCKET_LAUNCHER and time.time() < self.app.weapon_timer:
-            x, y = 85, 600
-            total = 10
-            remaining = self.app.weapon_timer - time.time()
-            percent = max(0, min(1, remaining / total))
-
-            full_width = int(self.bar_full.get_width() * percent)
-            if full_width > 0:
-                bar_clip = self.bar_full.subsurface((0, 0, full_width, self.bar_full.get_height()))
-                self.screen.blit(bar_clip, (x, y))
 
         if self.app.player.speed_multiplier > 1.0 and time.time() < self.app.player.speed_timer:
             bw = self.bar_speed_full.get_width()
@@ -138,32 +136,46 @@ class UIManager:
             pg.draw.rect(self.screen, (255, 231, 163), (x, y, bar_w, bar_h), 3, border_radius=6)
 
     def draw_weapon_ui(self):
+        # pozicija weapon framea (300x200) u donjem lijevom kutu
+        fw, fh = 300, 200
         padding = 20
-        frame_width, frame_height = self.weapon_frame.get_size()
-        x = padding
-        y = self.screen.get_height() - frame_height - padding
-        if x + frame_width > self.screen.get_width():
-            x = self.screen.get_width() - frame_width
-        if y + frame_height > self.screen.get_height():
-            y = self.screen.get_height() - frame_height
-        frame_rect = self.weapon_frame.get_rect()
-        frame_rect.topleft = (x, y)
+        fx = padding
+        fy = self.screen.get_height() - fh - padding
+
+        # weapon cooldown bar — tik iznad weapon framea
+        bar_active = (
+            self.app.weapon != WeaponType.REVOLVER
+            and self.app.weapon != WeaponType.ROCKET_LAUNCHER
+            and time.time() < self.app.weapon_timer
+        )
+        bx = fx + (fw - 250) // 2 - self.weapon_bar_x_offset
+        by = fy - self.weapon_bar_h + 50
+
+        if bar_active:
+            total = 10
+            remaining = self.app.weapon_timer - time.time()
+            percent = max(0, min(1, remaining / total))
+            fill_w = int(self.bar_fill_w_wb * percent)
+            if fill_w > 0:
+                self.screen.blit(self.bar_empty, (bx, by))
+                clip = self.bar_full.subsurface((self.bar_fill_x_wb, 0, fill_w, self.weapon_bar_h))
+                self.screen.blit(clip, (bx + self.bar_fill_x_wb, by))
+
+        # rockets counter — iznad bara ako je aktivan, inače iznad weapon framea
         if self.app.rocket_shots_remaining > 0:
             font = pg.font.Font("assets/fonts/steampunk-mainmenu.ttf", 24)
             text = f"Rockets  x{self.app.rocket_shots_remaining}"
             shadow = font.render(text, True, (30, 18, 8))
             label = font.render(text, True, (220, 210, 180))
-            lx = frame_rect.x + (frame_rect.width - label.get_width()) // 2
-            ly = frame_rect.y - label.get_height() - 2
+            lx = fx + (fw - label.get_width()) // 2
+            ly = (by - label.get_height() - 2) if bar_active else (fy - label.get_height() - 2)
             self.screen.blit(shadow, (lx + 2, ly + 2))
             self.screen.blit(label, (lx, ly))
 
-        self.screen.blit(self.weapon_frame, frame_rect)
+        self.screen.blit(self.weapon_frame, (fx, fy))
         icon = self.weapon_icons[self.app.weapon]
         icon = pg.transform.scale(icon, (128, 128))
-        icon_x = frame_rect.x + (frame_rect.width - icon.get_width()) // 2
-        icon_y = frame_rect.y + (frame_rect.height - icon.get_height()) // 2
-        self.screen.blit(icon, (icon_x, icon_y))
+        self.screen.blit(icon, (fx + (fw - 128) // 2, fy + (fh - 128) // 2))
 
     def draw_status_message(self):
         if time.time() >= self.app.status_message_until or not self.app.status_message:
