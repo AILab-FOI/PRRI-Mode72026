@@ -9,8 +9,6 @@ class UIManager:
     def __init__(self, app):
         self.app = app
         self.screen = app.screen
-        self.powerup_icon = pg.image.load("assets/textures/ui/Steampunk_valve_and_pipe.png").convert_alpha()
-        self.powerup_icon = pg.transform.scale(self.powerup_icon, (128, 128))
         self.weapon_icons = {
             WeaponType.REVOLVER: pg.image.load("assets/textures/powerups/revolver_steampunk.png").convert_alpha(),
             WeaponType.SHOTGUN: pg.image.load("assets/textures/powerups/shotgun_steampunk.png").convert_alpha(),
