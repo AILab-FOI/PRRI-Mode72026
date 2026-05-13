@@ -19,14 +19,13 @@ class Game:
         self.enemies = []
         self.drops = []
         self.obstacles = []
-        self.wave = 9
+        self.wave = 1
         self.boss_active = False
         self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles)
         self.wave_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.explosion_sound = pg.mixer.Sound("assets/music/eksplozija.mp3")
-        # self.level_manager.spawn_wave(self.wave)
-        self.spawn_boss()  # TEST MODE: start directly on boss level
-
+        self.level_manager.spawn_wave(self.wave)
+        
     def spawn_wave(self, wave_num):
         # TODO: replace LevelManager.spawn_wave() with 4 defined levels per GDD when level design is finalized
         self.level_manager.spawn_wave(wave_num)

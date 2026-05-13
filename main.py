@@ -175,13 +175,11 @@ class App:
     def on_boss_defeated(self):
         self.audio.stop_powerup()
         self.audio.stop_move_sound()
-        self.state = GAME_OVER
-        self.results_screen = ResultsScreen(
-            self.screen,
-            int(time.time() - self.start_time),
-            self.enemies_killed,
-            self.game.wave,
-        )
+        def go_to_menu():
+            self.__init__()
+            self.state = MENU
+        self.cutscene_screen.setup(3, {}, go_to_menu, boss_victory=True)
+        self.state = CUTSCENE
 
     def apply_powerup(self, weapon_type):
         print(f"[POWERUP] Weapon set to {weapon_type.value}")
