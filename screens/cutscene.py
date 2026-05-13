@@ -34,10 +34,11 @@ class CutsceneScreen:
                 self._bg_cache[map_num] = None
         return self._bg_cache[map_num]
 
-    def setup(self, map_num, stats, on_continue):
+    def setup(self, map_num, stats, on_continue, boss_victory=False):
         self._map_num = map_num
         self._stats = stats
         self._on_continue = on_continue
+        self._boss_victory = boss_victory
 
     def continue_game(self):
         if self._on_continue:
@@ -52,20 +53,26 @@ class CutsceneScreen:
 
         w, h = self.screen.get_size()
         cx = w // 2
-        y = h // 8  # upper-center empty area
+        y = h // 8
 
-        self._blit_text(self.title_font, f"Map {self._map_num} Complete", cx, y, (220, 210, 180))
-        y += 96
+        if self._boss_victory:
+            cy = h // 2
+            self._blit_text(self.title_font, "Boss Defeated!", cx, cy - 60, (220, 210, 180))
+            if (pg.time.get_ticks() // 550) % 2 == 0:
+                self._blit_text(self.hint_font, "Press ENTER for Main Menu", cx, cy + 60, (180, 160, 120))
+        else:
+            self._blit_text(self.title_font, f"Map {self._map_num} Complete", cx, y, (220, 210, 180))
+            y += 96
 
-        self._blit_text(self.stat_font, f"Enemies destroyed:  {self._stats['enemies_killed']}", cx, y, (255, 255, 255))
-        y += 62
-        self._blit_text(self.stat_font, f"Damage received:    {self._stats['damage_taken']}", cx, y, (255, 200, 150))
-        y += 62
-        self._blit_text(self.stat_font, f"Waves survived:     {self._stats['waves']}", cx, y, (150, 220, 255))
-        y += 96
+            self._blit_text(self.stat_font, f"Enemies destroyed:  {self._stats['enemies_killed']}", cx, y, (255, 255, 255))
+            y += 62
+            self._blit_text(self.stat_font, f"Damage received:    {self._stats['damage_taken']}", cx, y, (255, 200, 150))
+            y += 62
+            self._blit_text(self.stat_font, f"Waves survived:     {self._stats['waves']}", cx, y, (150, 220, 255))
+            y += 96
 
-        if (pg.time.get_ticks() // 550) % 2 == 0:
-            self._blit_text(self.hint_font, "Press ENTER to continue", cx, y, (180, 160, 120))
+            if (pg.time.get_ticks() // 550) % 2 == 0:
+                self._blit_text(self.hint_font, "Press ENTER to continue", cx, y, (180, 160, 120))
 
     def _blit_text(self, font, text, cx, y, color):
         shadow = font.render(text, True, (30, 18, 8))
