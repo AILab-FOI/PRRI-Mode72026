@@ -76,9 +76,9 @@ class Player:
         elif turn_input > 0:
             self.animation_state = "skretanje-desno"
         elif altitude_input > 0:
-            self.animation_state = "skretanje-gore"
-        elif altitude_input < 0:
             self.animation_state = "skretanje-dolje"
+        elif altitude_input < 0:
+            self.animation_state = "skretanje-gore"
         else:
             self.animation_state = "neutral"
 

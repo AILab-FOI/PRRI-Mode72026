@@ -16,7 +16,7 @@ class App:
     def __init__(self):
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode(WIN_RES)
+        self.screen = pg.display.set_mode(WIN_RES, pg.FULLSCREEN)
         self.clock = pg.time.Clock()
         self.audio = AudioManager()
         self.mode7 = Mode7(self)
@@ -48,7 +48,14 @@ class App:
         self.status_message = ""
         self.status_message_until = 0
         self.audio.play_menu_music()
+        self._pending_action = None
         
+    def _restart_game(self):
+        self._pending_action = 'restart'
+
+    def _go_to_menu(self):
+        self._pending_action = 'menu'
+
     def apply_speed_boost(self, multiplier, duration=5):
         self.player.apply_speed_boost(multiplier, duration)
         self.show_status_message(f"Speed boost x{multiplier:.1f}", duration=1.6)
@@ -74,7 +81,9 @@ class App:
                     self.screen,
                     int(time.time() - self.start_time),
                     self.enemies_killed,
-                    self.game.wave
+                    self.game.wave,
+                    on_retry=self._restart_game,
+                    on_menu=self._go_to_menu,
                 )
                 return
             keys = pg.key.get_pressed()
@@ -239,6 +248,13 @@ class App:
             self.update()
             self.draw()
             pg.display.flip()
+            if self._pending_action == 'restart':
+                self.__init__()
+                self.state = LOADING
+                self.loading_screen.start()
+            elif self._pending_action == 'menu':
+                self.__init__()
+                self.state = MENU
 
 if __name__ == "__main__":
     app = App()
