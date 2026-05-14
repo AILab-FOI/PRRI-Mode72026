@@ -78,6 +78,19 @@ class Game:
                     if not enemy.alive:
                         self._on_enemy_killed(enemy)
                     break
+            if not proj.active:
+                continue
+            for obstacle in self.obstacles:
+                if not obstacle.alive:
+                    continue
+                if obstacle.check_collision(proj):
+                    proj.active = False
+                    if isinstance(proj, RocketProjectile):
+                        self.explosion_sound.play()
+                        obstacle.hp -= 50
+                        if obstacle.hp <= 0:
+                            obstacle.alive = False
+                    break
 
         self.projectiles = [p for p in self.projectiles if p.active]
 
@@ -118,7 +131,7 @@ class Game:
         self.drops = [d for d in self.drops if not d.collected]
 
         for obstacle in self.obstacles:
-            obstacle.update(self.player)
+            obstacle.update(self.player, player_height)
         self.obstacles[:] = [o for o in self.obstacles if o.alive]
 
         if self.boss_active and time.time() >= self.boss_powerup_timer:
