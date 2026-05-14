@@ -1,7 +1,7 @@
 import random
 
 from entities.enemies import Enemy, FastEnemy, TankEnemy
-from entities.obstacles import Obstacle, SmallBuilding, LargeBuilding
+from entities.obstacles import Obstacle, SmallBuilding, LargeBuilding, Cloud, Dune, Volcano
 
 
 LEVEL_TEXTURES = [
@@ -16,6 +16,9 @@ _ENEMY_POOL = [
     [Enemy, FastEnemy],         # map 2: standard + fast
     [FastEnemy, TankEnemy],     # map 3: fast + tank
 ]
+
+# Obstacle per map: clouds in the sky on map 1, dunes on the ground on map 2, volcanoes on map 3.
+_OBSTACLE_PER_MAP = [Cloud, Dune, Volcano]
 
 
 class LevelManager:
@@ -46,21 +49,15 @@ class LevelManager:
             self.enemies.append(random.choice(pool)((x, y), height=spawn_height))
 
         num_obstacles = min(3 + wave_num, 15)
+        obstacle_cls = _OBSTACLE_PER_MAP[map_idx]
+
         for _ in range(num_obstacles):
-            ox = random.uniform(-12, 12)
-            oy = random.uniform(-12, 12)
+            ox = random.uniform(-10, 10)
+            oy = random.uniform(-10, 10)
             while abs(ox) < 2.0 and abs(oy) < 2.0:
-                ox = random.uniform(-12, 12)
-                oy = random.uniform(-12, 12)
-            building_type = random.choices(
-                [SmallBuilding, Obstacle, LargeBuilding],
-                weights=[3, 2, 1] if map_idx < 2 else [1, 2, 3],
-                k=1,
-            )[0]
-            self.obstacles.append(building_type(
-                (ox, oy),
-                texture_path="assets/textures/environment/ground_halfsnow_lowres.png",
-            ))
+                ox = random.uniform(-10, 10)
+                oy = random.uniform(-10, 10)
+            self.obstacles.append(obstacle_cls((ox, oy)))
 
     def apply_boss_map(self):
         if self._current_level_idx != 2:
