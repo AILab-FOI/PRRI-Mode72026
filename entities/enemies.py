@@ -258,7 +258,7 @@ class BossEnemy(Enemy):
 
     def __init__(self, pos, height=None):
         super().__init__(pos, speed=self.BASE_SPEED, min_distance=4.0, damage=3, height=height)
-        boss_path = 'assets/textures/enemies/Final_boss.png'
+        boss_path = 'assets/textures/sprjatovi-png/Final_boss.png'
         if Path(boss_path).exists():
             self.texture = pg.image.load(boss_path).convert_alpha()
         else:
