@@ -22,12 +22,13 @@ _OBSTACLE_PER_MAP = [Cloud, Dune, Volcano]
 
 
 class LevelManager:
-    def __init__(self, mode7, enemies, obstacles):
+    def __init__(self, mode7, enemies, obstacles, on_level_change=None):
         self.mode7 = mode7
         self.enemies = enemies
         self.obstacles = obstacles
         self._current_level_idx = -1
         self._preloaded = self.mode7.preload_levels(LEVEL_TEXTURES)
+        self.on_level_change = on_level_change
 
     def spawn_wave(self, wave_num):
         self.enemies.clear()
@@ -39,6 +40,8 @@ class LevelManager:
         if map_idx != self._current_level_idx:
             self._current_level_idx = map_idx
             self.mode7.apply_preloaded(self._preloaded[map_idx])
+            if self.on_level_change:
+                self.on_level_change(map_idx)
 
         enemy_count = 7 + wave_in_map
         spawn_height = float(getattr(self.mode7, "alt", Enemy.DEFAULT_MIN_HEIGHT))

@@ -21,7 +21,7 @@ class Game:
         self.obstacles = []
         self.wave = 1
         self.boss_active = False
-        self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles)
+        self.level_manager = LevelManager(self.mode7, self.enemies, self.obstacles, on_level_change=self.app.audio.play_level_music,)
         self.wave_sound = pg.mixer.Sound("assets/music/Level up.mp3")
         self.explosion_sound = pg.mixer.Sound("assets/music/eksplozija.mp3")
         self.level_manager.spawn_wave(self.wave)
