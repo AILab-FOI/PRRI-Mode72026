@@ -13,7 +13,7 @@ class UIManager:
             WeaponType.REVOLVER: pg.image.load("assets/textures/powerups/revolver_steampunk.png").convert_alpha(),
             WeaponType.SHOTGUN: pg.image.load("assets/textures/powerups/shotgun_steampunk.png").convert_alpha(),
             WeaponType.MINIGUN: pg.image.load("assets/textures/powerups/minigun_steampunk.png").convert_alpha(),
-            WeaponType.ROCKET_LAUNCHER: pg.image.load("assets/textures/powerups/Speed_powerup.png").convert_alpha(),
+            WeaponType.ROCKET_LAUNCHER: pg.image.load("assets/textures/powerups/rocketlauncher.png").convert_alpha(),
         }
         bar_height = 110
         original_full = pg.image.load("assets/textures/ui/hud_bez_pozadine.png").convert_alpha()
