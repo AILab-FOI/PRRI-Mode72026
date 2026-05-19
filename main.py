@@ -170,6 +170,9 @@ class App:
         self.map_kills_start = self.enemies_killed
         self.map_damage_start = self.player.damage_taken
 
+        heal = self.player.max_health * 0.25
+        self.player.health = min(self.player.max_health, self.player.health + heal)
+
         if completed_wave < 9:
             def on_continue():
                 self.game.wave += 1
