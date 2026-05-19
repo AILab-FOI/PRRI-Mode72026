@@ -69,9 +69,14 @@ class App:
         if self.weapon != WeaponType.REVOLVER and self.weapon_timer > 0 and time.time() > self.weapon_timer:
             if self.weapon == WeaponType.MINIGUN:
                 self.audio.play_minigun_reload()
-            self.weapon = WeaponType.REVOLVER
             self.weapon_timer = 0
-            print("[TIMER] Power-up expired")
+            if self.rocket_shots_remaining > 0:
+                self.weapon = WeaponType.ROCKET_LAUNCHER
+                self.show_status_message(f"{self.rocket_shots_remaining} Rockets ready!", duration=1.8)
+                print("[TIMER] Power-up expired, switching to rocket launcher")
+            else:
+                self.weapon = WeaponType.REVOLVER
+                print("[TIMER] Power-up expired")
         elif self.state == GAME:
             if self.player.is_dead():
                 self.audio.stop_powerup()
@@ -165,6 +170,9 @@ class App:
         self.map_kills_start = self.enemies_killed
         self.map_damage_start = self.player.damage_taken
 
+        heal = self.player.max_health * 0.25
+        self.player.health = min(self.player.max_health, self.player.health + heal)
+
         if completed_wave < 9:
             def on_continue():
                 self.game.wave += 1
@@ -192,15 +200,14 @@ class App:
 
     def apply_powerup(self, weapon_type):
         print(f"[POWERUP] Weapon set to {weapon_type.value}")
-        self.weapon = weapon_type
         if weapon_type == WeaponType.ROCKET_LAUNCHER:
-            if self.weapon == WeaponType.ROCKET_LAUNCHER:
-                self.rocket_shots_remaining += 5
-            else:
-                self.rocket_shots_remaining = 5
-            self.weapon_timer = 0
+            self.rocket_shots_remaining += 5
             self.show_status_message(f"{self.rocket_shots_remaining} Rockets loaded!", duration=1.8)
+            # Only switch to rocket launcher if no timed weapon is active
+            if self.weapon == WeaponType.REVOLVER:
+                self.weapon = WeaponType.ROCKET_LAUNCHER
         else:
+            self.weapon = weapon_type
             self.weapon_timer = time.time() + 10
             self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
         self.audio.play_powerup()
