@@ -16,7 +16,7 @@ class App:
     def __init__(self):
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode(WIN_RES, pg.FULLSCREEN)
+        self.screen = pg.display.set_mode(WIN_RES)
         self.clock = pg.time.Clock()
         self.audio = AudioManager()
         self.mode7 = Mode7(self)
