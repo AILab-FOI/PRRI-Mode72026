@@ -16,7 +16,7 @@ class AudioManager:
         self._move_channel = None
 
     def play_menu_music(self):
-        pg.mixer.music.load("assets/music/IzmeduLevelaFinal.wav")
+        pg.mixer.music.load("assets/music/IzmeduLevelaFINAL.wav")
         pg.mixer.music.set_volume(0.5)
         pg.mixer.music.play(-1, 0.0)
 
