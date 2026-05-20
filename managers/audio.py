@@ -16,14 +16,39 @@ class AudioManager:
         self._move_channel = None
 
     def play_menu_music(self):
-        pg.mixer.music.load("assets/music/Pixel Pulse.mp3")
+        pg.mixer.music.load("assets/music/IzmeduLevelaFinal.wav")
         pg.mixer.music.set_volume(0.5)
         pg.mixer.music.play(-1, 0.0)
 
     def play_game_music(self):
         pg.mixer.music.stop()
-        pg.mixer.music.load("assets/music/Pixel Forge.mp3")
+        pg.mixer.music.load("assets/music/LEVELIFINAL.wav")
         pg.mixer.music.set_volume(0.5)
+        pg.mixer.music.play(-1, 0.0)
+
+    def play_level_music(self, level_idx: int):
+        tracks = [
+            "assets/music/LEVELIFINAL.wav",
+            "assets/music/DrugiLevel.wav",   
+            "assets/music/LAVALEVEL.wav",
+            "assets/music/BossBattle.wav", 
+        ]
+        pg.mixer.music.stop()
+        pg.mixer.music.load(tracks[level_idx])
+        pg.mixer.music.set_volume(1)
+        pg.mixer.music.play(-1, 0.0)
+
+    def play_between_levels_music(self, level_idx: int = 0):
+        tracks = [
+            "assets/music/IzmeduLevelaFINAL.wav",   
+            "assets/music/PrijeDrugogLevela.wav",   
+            "assets/music/PrijeLava.wav",
+            "assets/music/PocetakBossFinal.wav",
+            "assets/music/Heaven.wav",
+        ]
+        pg.mixer.music.stop()
+        pg.mixer.music.load(tracks[level_idx])
+        pg.mixer.music.set_volume(1)
         pg.mixer.music.play(-1, 0.0)
 
     def play_powerup(self):

@@ -119,7 +119,7 @@ class LoadingScreen:
         self.start_time = now
         self.frame_index = 0
         self.last_frame_time = now
-        self.app.audio.play_game_music()
+        self.app.audio.play_level_music(0)
 
     def update(self):
         now = time.time()

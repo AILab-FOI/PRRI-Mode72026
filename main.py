@@ -187,11 +187,13 @@ class App:
     def start_boss(self):
         self.game.wave += 1
         self.game.spawn_boss()
+        self.audio.play_level_music(3)
         self.state = GAME
 
     def on_boss_defeated(self):
         self.audio.stop_powerup()
         self.audio.stop_move_sound()
+        self.audio.play_between_levels_music(4)
         def go_to_menu():
             self.__init__()
             self.state = MENU
