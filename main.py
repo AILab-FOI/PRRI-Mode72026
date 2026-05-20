@@ -213,6 +213,33 @@ class App:
             self.weapon_timer = time.time() + 10
             self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
         self.audio.play_powerup()
+        self.show_status_message(f"{weapon_type.value.title()} online", duration=1.8)
+
+    def show_status_message(self, message, duration=1.8):
+        self.status_message = message
+        self.status_message_until = time.time() + duration
+
+    def can_fire_weapon(self):
+        cooldown = self.weapon_cooldowns[self.weapon]
+        return time.time() - self.last_shot_time >= cooldown
+
+    def try_fire_weapon(self):
+        if not self.can_fire_weapon():
+            return False
+
+        if self.weapon == WeaponType.REVOLVER:
+            self.audio.play_revolver()
+            self.game.shoot_revolver(self.player.pos, self.player.angle)
+        elif self.weapon == WeaponType.SHOTGUN:
+            self.audio.play_shotgun()
+            self.game.shoot_shotgun(self.player.pos, self.player.angle)
+        elif self.weapon == WeaponType.MINIGUN:
+            self.audio.play_minigun()
+            self.game.shoot_minigun(self.player.pos, self.player.angle)
+
+        now = time.time()
+        self.last_shot_time = now
+        return True
 
     def show_status_message(self, message, duration=1.8):
         self.status_message = message
