@@ -39,7 +39,8 @@ class CutsceneScreen:
         self._stats = stats
         self._on_continue = on_continue
         self._boss_victory = boss_victory
-        self.app.audio.play_between_levels_music(map_num)
+        if not boss_victory:
+            self.app.audio.play_between_levels_music(map_num)
 
     def continue_game(self):
         if self._on_continue:
